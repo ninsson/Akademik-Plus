@@ -1,12 +1,12 @@
 package models
 
-type PiorytetUsterki string
+type PriorytetUsterki string
 
 const (
-	BardzoPilne  PiorytetUsterki = "Bardzo_pilne"
-	Pilne        PiorytetUsterki = "Pilne"
-	Normalny     PiorytetUsterki = "Normalny"
-	MozePoczekac PiorytetUsterki = "Moze_poczekac"
+	BardzoPilne  PriorytetUsterki = "Bardzo_pilne"
+	Pilne        PriorytetUsterki = "Pilne"
+	Normalny     PriorytetUsterki = "Normalny"
+	MozePoczekac PriorytetUsterki = "Moze_poczekac"
 )
 
 type StatusNaprawy string
