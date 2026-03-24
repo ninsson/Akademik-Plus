@@ -39,7 +39,7 @@ func main() {
 
 	fmt.Println("Listening on port 8080")
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
