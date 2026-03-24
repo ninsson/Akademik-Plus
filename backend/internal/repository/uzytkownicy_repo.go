@@ -15,8 +15,8 @@ func NewUzytkownicyRepo(db *sqlx.DB) *UzytkownicyRepo {
 
 func (r *UzytkownicyRepo) Create(uzytkownik *models.Uzytkownik) error {
 	query := `
-		INSERT INTO uzytkownicy (imie, nazwisko, email, haslo, czy_admin) 
-		VALUES (:imie, :nazwisko, :email, :haslo, :czy_admin)
+		INSERT INTO uzytkownicy (imie, nazwisko, email, password_hash, rola) 
+		VALUES (:imie, :nazwisko, :email, :password_hash, :rola)
 		RETURNING id`
 	rows, err := r.db.NamedQuery(query, uzytkownik)
 	if err != nil {
