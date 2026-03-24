@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type PriorytetUsterki string
 
 const (
@@ -18,3 +20,16 @@ const (
 	Naprawiono           StatusNaprawy = "Naprawiono"
 	ZakonczonoBezNaprawy StatusNaprawy = "Zakonczono_bez_naprawy"
 )
+
+type Usterka struct {
+	ID                        int               `db:"id" json:"id"`
+	ZglaszajacyID             int               `db:"zglaszajacy_id" json:"zglaszajacy_id"`
+	PokojID                   int               `db:"pokoj_id" json:"pokoj_id"`
+	Priorytet                 *PriorytetUsterki `db:"priorytet" json:"priorytet"`
+	Status                    StatusNaprawy     `db:"status" json:"status"`
+	PrzypisanyAdministratorID *int              `db:"przypisany_administrator_id" json:"przypisany_administrator_id"`
+	OpisUsterki               string            `db:"opis_usterki" json:"opis_usterki"`
+	DataZgloszenia            time.Time         `db:"data_zgloszenia" json:"data_zgloszenia"`
+	DataRozwiazania           *time.Time        `db:"data_rozwiazania" json:"data_rozwiazania"`
+}
+
