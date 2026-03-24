@@ -29,7 +29,7 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:              ":8080",
+		Addr:              ":8000",
 		Handler:           nil,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       5 * time.Second,
