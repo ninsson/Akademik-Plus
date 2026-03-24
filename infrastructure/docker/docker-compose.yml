@@ -35,3 +35,6 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+
+volumes:
+  postgres_data:
