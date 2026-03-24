@@ -9,7 +9,7 @@ const (
 	Mieszkaniec   Rola = "Mieszkaniec"
 )
 
-type Uzytkownicy struct {
+type Uzytkownik struct {
 	ID                  int    `db:"id" json:"id"`
 	Imie                string `db:"imie" json:"imie"`
 	Nazwisko            string `db:"nazwisko" json:"nazwisko"`
@@ -21,7 +21,7 @@ type Uzytkownicy struct {
 	CzyWymagaDostosowan bool   `db:"czy_wymaga_dostosowan" json:"czy_wymaga_dostosowan"`
 }
 
-type Zakwaterowania struct {
+type Zakwaterowanie struct {
 	ID                     int       `db:"id" json:"id"`
 	MieszkaniecID          int       `db:"mieszkaniec_id" json:"mieszkaniec_id"`
 	PokojID                int       `db:"pokoj_id" json:"pokoj_id"`
