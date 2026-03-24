@@ -16,7 +16,7 @@ type Uzytkownicy struct {
 	Email               string `db:"email" json:"email"`
 	NumerTelefonu       string `db:"numer_telefonu" json:"numer_telefonu"`
 	Username            string `db:"username" json:"username"`
-	PasswordHash        string `db:"password_hash" json:"password_hash"`
+	PasswordHash        string `db:"password_hash" json:"-"`
 	Rola                Rola   `db:"rola" json:"rola"`
 	CzyWymagaDostosowan bool   `db:"czy_wymaga_dostosowan" json:"czy_wymaga_dostosowan"`
 }
