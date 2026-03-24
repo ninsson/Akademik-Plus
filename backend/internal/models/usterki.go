@@ -35,7 +35,7 @@ type Usterka struct {
 
 type Chat struct {
 	ID                int       `db:"id" json:"id"`
-	IDUsterki         int       `db:"id_usterki" json:"id_usterki"`
+	UsterkaID         int       `db:"id_usterki" json:"id_usterki"`
 	AutorWiadomosciID int       `db:"autor_wiadomosci_id" json:"autor_wiadomosci_id"`
 	Wiadomosc         string    `db:"wiadomosc" json:"wiadomosc"`
 	DataWiadomosci    time.Time `db:"data_wiadomosci" json:"data_wiadomosci"`
