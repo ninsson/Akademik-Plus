@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -24,7 +25,7 @@ func main() {
 
 	err := srv.ListenAndServe()
 
-	if err != nil {
-		fmt.Printf("Error starting server: %v\n", err)
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Server error: %v", err)
 	}
 }
