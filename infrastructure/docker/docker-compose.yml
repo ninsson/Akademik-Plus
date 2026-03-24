@@ -21,7 +21,9 @@ services:
       - postgres
 
   api:
-    build: ../backend/Dockerfile
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
