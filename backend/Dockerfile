@@ -1,18 +1,16 @@
-FROM golang:1.22-alpine
+FROM golang:1.26-alpine
 LABEL authors="ziomciopoziomcio"
+
+RUN apk add --no-cache git
 
 WORKDIR /app
 COPY go.mod go.sum ./
-RUN apt-get update && apt-get install -y golang-go
 RUN go mod download
 
 
 COPY . .
 
-RUN useradd app
-USER app
-
-RUN go build -o main .
+RUN go build -o main ./cmd/api/main.go
 
 EXPOSE 8000
 CMD ["./main"]
