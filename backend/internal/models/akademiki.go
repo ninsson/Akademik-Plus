@@ -14,7 +14,7 @@ const (
 	Podwyzszony StandardPokoju = "Podwyzszony"
 )
 
-type Pokoje struct {
+type Pokoj struct {
 	ID             int            `db:"id" json:"id"`
 	NumerPokoju    string         `db:"numer_pokoju" json:"numer_pokoju"`
 	IleOsob        int            `db:"ile_osob" json:"ile_osob"`
@@ -22,12 +22,12 @@ type Pokoje struct {
 	CzyToaleta     bool           `db:"czy_toaleta" json:"czy_toaleta"`
 	CzyDostosowany bool           `db:"czy_dostosowany" json:"czy_dostosowany"`
 	Pietro         int            `db:"pietro" json:"pietro"`
-	Status         StatusPokoju   `db:"status" json:"status"`
+	Status         StatusPokoju   `db:"status_pokoju" json:"status_pokoju"`
 	Standard       StandardPokoju `db:"standard" json:"standard"`
 	AkademikID     int            `db:"akademik_id" json:"akademik_id"`
 }
 
-type Akademiki struct {
+type Akademik struct {
 	ID             int    `db:"id" json:"id"`
 	Adres          string `db:"adres" json:"adres"`
 	IloscPieter    int    `db:"ilosc_pieter" json:"ilosc_pieter"`
