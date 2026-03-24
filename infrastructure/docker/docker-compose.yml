@@ -19,3 +19,16 @@ services:
       - "8080:80"
     depends_on:
       - postgres
+
+  api:
+    build: ../backend/Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: mydb
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
