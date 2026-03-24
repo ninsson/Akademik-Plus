@@ -33,3 +33,10 @@ type Usterka struct {
 	DataRozwiazania           *time.Time        `db:"data_rozwiazania" json:"data_rozwiazania"`
 }
 
+type Chat struct {
+	ID                int       `db:"id" json:"id"`
+	IDUsterki         int       `db:"id_usterki" json:"id_usterki"`
+	AutorWiadomosciID int       `db:"autor_wiadomosci_id" json:"autor_wiadomosci_id"`
+	Wiadomosc         string    `db:"wiadomosc" json:"wiadomosc"`
+	DataWiadomosci    time.Time `db:"data_wiadomosci" json:"data_wiadomosci"`
+}
