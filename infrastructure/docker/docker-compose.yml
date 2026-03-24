@@ -1,3 +1,5 @@
+name: akademik-plus
+
 services:
   postgres:
     image: postgres:15
