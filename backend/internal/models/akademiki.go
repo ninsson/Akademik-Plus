@@ -26,3 +26,11 @@ type Pokoje struct {
 	Standard       StandardPokoju `db:"standard" json:"standard"`
 	AkademikID     int            `db:"akademik_id" json:"akademik_id"`
 }
+
+type Akademiki struct {
+	ID             int    `db:"id" json:"id"`
+	Adres          string `db:"adres" json:"adres"`
+	IloscPieter    int    `db:"ilosc_pieter" json:"ilosc_pieter"`
+	CzyWinda       bool   `db:"czy_winda" json:"czy_winda"`
+	CzyDostosowany bool   `db:"czy_dostosowany" json:"czy_dostosowany"`
+}
