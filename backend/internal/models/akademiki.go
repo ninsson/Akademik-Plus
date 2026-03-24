@@ -4,7 +4,7 @@ type StatusPokoju string
 
 const (
 	Dostepny  StatusPokoju = "Dostepny"
-	Wremoncie StatusPokoju = "W_remoncie"
+	WRemoncie StatusPokoju = "W_remoncie"
 )
 
 type StandardPokoju string
