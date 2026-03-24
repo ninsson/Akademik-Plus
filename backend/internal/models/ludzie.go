@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type Rola string
 
 const (
@@ -17,4 +19,12 @@ type Uzytkownicy struct {
 	PasswordHash        string `db:"password_hash" json:"password_hash"`
 	Rola                Rola   `db:"rola" json:"rola"`
 	CzyWymagaDostosowan bool   `db:"czy_wymaga_dostosowan" json:"czy_wymaga_dostosowan"`
+}
+
+type Zakwaterowania struct {
+	ID                     int       `db:"id" json:"id"`
+	MieszkaniecID          int       `db:"mieszkaniec_id" json:"mieszkaniec_id"`
+	PokojID                int       `db:"pokoj_id" json:"pokoj_id"`
+	PoczatekZakwaterowania time.Time `db:"poczatek_zakwaterowania" json:"poczatek_zakwaterowania"`
+	KoniecZakwaterowania   time.Time `db:"koniec_zakwaterowania" json:"koniec_zakwaterowania"`
 }
