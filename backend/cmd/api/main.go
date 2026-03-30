@@ -1,6 +1,8 @@
 package main
 
 import (
+	"akademik/internal/handlers"
+	"akademik/internal/repository"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,13 +48,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database after %d attempts: %v", maxAttempts, err)
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+
+	fmt.Println("Successfully connected to database")
+
+	usterkiRepo := repository.NewUsterkiRepo(db)
+	usterkiHandler := handlers.NewUsterkiHandler(usterkiRepo)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/usterki/pokoj/{id}", usterkiHandler.GetByPokoj)
 
 	srv := &http.Server{
 		Addr:              ":8000",
-		Handler:           nil,
+		Handler:           mux,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      10 * time.Second,
