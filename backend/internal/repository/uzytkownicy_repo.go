@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"akademik/internal/models"
 	"github.com/jmoiron/sqlx"
 )
@@ -29,6 +30,11 @@ func (r *UzytkownicyRepo) Create(uzytkownik *models.Uzytkownik) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return fmt.Errorf("nie udało się utworzyć użytkownika")
 	}
 	return nil
 }
