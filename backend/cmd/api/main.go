@@ -59,6 +59,11 @@ func main() {
 	mux.HandleFunc("POST /usterki", usterkiHandler.Create)
 	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
 
+	uzytkownicyRepo := repository.NewUzytkownicyRepo(db)
+	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyRepo)
+
+	mux.HandleFunc("GET /uzytkownicy/{id}", uzytkownicyHandler.GetByID)
+
 	srv := &http.Server{
 		Addr:              ":8000",
 		Handler:           mux,
