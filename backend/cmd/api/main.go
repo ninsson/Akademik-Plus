@@ -63,6 +63,7 @@ func main() {
 	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyRepo)
 
 	mux.HandleFunc("GET /uzytkownicy/{id}", uzytkownicyHandler.GetByID)
+	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
 	srv := &http.Server{
 		Addr:              ":8000",
