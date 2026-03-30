@@ -1,0 +1,17 @@
+### Usterka download
+GET http://localhost:8000/usterki/pokoj/101
+Accept: application/json
+
+###
+
+### Add new usterka
+POST http://localhost:8000/usterki
+Content-Type: application/json
+
+{
+  "zglaszajacy_id": 1,
+  "pokoj_id": 101,
+  "opis_usterki": "Zepsuty telewizor",
+  "priorytet": "Wysoki",
+  "status": "Zgloszona"
+}
