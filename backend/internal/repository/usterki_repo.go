@@ -40,7 +40,7 @@ func (r *UsterkiRepo) GetByPokojID(pokojID int) ([]models.Usterka, error) {
 	return usterki, err
 }
 
-func (r *UsterkiRepo) UpdateStatus(id int, status string) error {
+func (r *UsterkiRepo) UpdateStatus(id int, status models.StatusNaprawy) error {
 	_, err := r.db.Exec("UPDATE usterki SET status = $1 WHERE id = $2", status, id)
 	return err
 }
