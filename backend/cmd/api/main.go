@@ -59,7 +59,7 @@ func main() {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	fmt.Println("Listening on port 8080")
+	fmt.Printf("Listening on %s\n", srv.Addr)
 
 	err = srv.ListenAndServe()
 
