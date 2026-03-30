@@ -19,12 +19,29 @@ func main() {
 	dbname := os.Getenv("DB_NAME")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sqlx.Connect("postgres", dsn)
+	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
 	defer db.Close()
 
+	maxAttempts := 10
+	backoff := 1 * time.Second
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		err = db.Ping()
+		if err == nil {
+			break
+		}
+
+		log.Printf("Database not ready (attempt %d/%d): %v", attempt, maxAttempts, err)
+		time.Sleep(backoff)
+		backoff *= 2
+	}
+
+	if err != nil {
+		log.Fatalf("Failed to connect to database after %d attempts: %v", maxAttempts, err)
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, World!")
 	})
