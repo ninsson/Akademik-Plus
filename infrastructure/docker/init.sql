@@ -10,7 +10,7 @@ CREATE TABLE uzytkownicy
 CREATE TABLE usterki
 (
     id             SERIAL PRIMARY KEY,
-    zglaszajacy_id INT  NOT NULL,
+    zglaszajacy_id INT  NOT NULL REFERENCES uzytkownicy(id),
     pokoj_id       INT  NOT NULL,
     opis_usterki   TEXT NOT NULL,
     priorytet      TEXT NOT NULL,
