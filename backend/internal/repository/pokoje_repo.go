@@ -21,7 +21,7 @@ func (r *PokojeRepo) GetAll() ([]models.Pokoj, error) {
 }
 
 func (r *PokojeRepo) Create(p *models.Pokoj) error {
-	query := "INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, akademik_id) VALUES (:numer, :ile_osob, :czy_kuchnia, :akademik_id)"
+	query := "INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, akademik_id) VALUES (:numer_pokoju, :ile_osob, :czy_kuchnia, :akademik_id)"
 	_, err := r.db.NamedExec(query, p)
 	return err
 }
