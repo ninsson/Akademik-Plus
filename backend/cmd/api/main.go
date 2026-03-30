@@ -57,6 +57,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /usterki/pokoj/{id}", usterkiHandler.GetByPokoj)
 	mux.HandleFunc("POST /usterki", usterkiHandler.Create)
+	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
 
 	srv := &http.Server{
 		Addr:              ":8000",

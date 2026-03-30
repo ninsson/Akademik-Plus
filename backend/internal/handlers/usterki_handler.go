@@ -66,3 +66,32 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid usterka ID", http.StatusBadRequest)
+		return
+	}
+
+	var requestBody struct {
+		Status string `json:"status"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	nowyStatus := models.StatusNaprawy(requestBody.Status)
+
+	err = h.repo.UpdateStatus(id, nowyStatus)
+	if err != nil {
+		http.Error(w, "Failed to update usterka status", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Usterka status updated successfully"}`))
+}
