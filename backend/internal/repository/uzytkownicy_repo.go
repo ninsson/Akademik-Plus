@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"fmt"
 	"akademik/internal/models"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 

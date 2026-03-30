@@ -2,6 +2,7 @@ package repository
 
 import (
 	"akademik/internal/models"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -30,6 +31,11 @@ func (r *UsterkiRepo) Create(u *models.Usterka) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return fmt.Errorf("nie udało się utworzyć usterki")
 	}
 	return nil
 }
