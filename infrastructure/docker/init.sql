@@ -3,7 +3,7 @@ CREATE TABLE uzytkownicy
     id           SERIAL PRIMARY KEY,
     imie        TEXT NOT NULL,
     nazwisko    TEXT NOT NULL,
-    email       TEXT UNIQUE NOT NULL
+    email       TEXT UNIQUE NOT NULL,
     rola        TEXT NOT NULL
 );
 
