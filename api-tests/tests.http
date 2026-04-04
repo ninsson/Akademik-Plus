@@ -23,3 +23,18 @@ Content-Type: application/json
 {
   "status": "W_trakcie"
 }
+
+### Add new user
+POST http://localhost:8000/uzytkownicy
+Content-Type: application/json
+
+{
+  "imie": "Jan",
+  "nazwisko": "Kowalski",
+  "email": "jan@akademik.pl",
+  "rola": "STUDENT"
+  }
+
+### Get new user
+GET http://localhost:8000/uzytkownicy/1
+Accept: application/json
