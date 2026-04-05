@@ -27,7 +27,7 @@ func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	uzytkownik, err := h.repo.GetByID(id)
 	if err != nil {
-		http.Error(w, "User not find", http.StatusNotFound)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
