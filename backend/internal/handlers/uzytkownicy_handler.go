@@ -31,8 +31,17 @@ func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response, err := json.Marshal(uzytkownik)
+	if err != nil {
+		http.Error(w, "Error during response serialization", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(uzytkownik)
+	if _, err := w.Write(response); err != nil {
+		http.Error(w, "Error during response write", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
