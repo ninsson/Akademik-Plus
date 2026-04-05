@@ -21,6 +21,14 @@ const (
 	ZakonczonoBezNaprawy StatusNaprawy = "Zakonczono_bez_naprawy"
 )
 
+func (s StatusNaprawy) IsValid() bool {
+	switch s {
+	case Przyjeto, Weryfikacja, WTrakcieNaprawy, Naprawiono, ZakonczonoBezNaprawy:
+		return true
+	}
+	return false
+}
+
 type Usterka struct {
 	ID                        int               `db:"id" json:"id"`
 	ZglaszajacyID             int               `db:"zglaszajacy_id" json:"zglaszajacy_id"`

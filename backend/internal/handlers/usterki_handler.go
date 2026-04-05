@@ -107,6 +107,11 @@ func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	nowyStatus := models.StatusNaprawy(requestBody.Status)
 
+	if !nowyStatus.IsValid() {
+		http.Error(w, "Invalid usterka status", http.StatusBadRequest)
+		return
+	}
+
 	err = h.repo.UpdateStatus(id, nowyStatus)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
