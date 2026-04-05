@@ -58,8 +58,8 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(nowaUsterka)
 	if err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
