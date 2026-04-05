@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"akademik/internal/repository"
 )
@@ -47,8 +48,26 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if nowaUsterka.OpisUsterki == "" {
-		http.Error(w, "Opis usterki is required", http.StatusBadRequest)
+	if nowaUsterka.ZglaszajacyID <= 0 {
+		http.Error(w, "ZglaszajacyID must be a positive integer", http.StatusBadRequest)
+		return
+	}
+
+	if nowaUsterka.PokojID <= 0 {
+		http.Error(w, "PokojID must be a positive integer", http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(nowaUsterka.OpisUsterki) == "" {
+		http.Error(w, "Opis usterki cannot be empty", http.StatusBadRequest)
+		return
+	}
+	if nowaUsterka.Priorytet == nil || strings.TrimSpace(string(*nowaUsterka.Priorytet)) == "" {
+		http.Error(w, "Priorytet is required", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(string(nowaUsterka.Status)) == "" {
+		http.Error(w, "Status is required", http.StatusBadRequest)
 		return
 	}
 
