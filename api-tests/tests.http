@@ -1,0 +1,40 @@
+### Usterka download
+GET http://localhost:8000/usterki/pokoj/101
+Accept: application/json
+
+###
+
+### Add new usterka
+POST http://localhost:8000/usterki
+Content-Type: application/json
+
+{
+  "zglaszajacy_id": 1,
+  "pokoj_id": 101,
+  "opis_usterki": "Zepsuty telewizor",
+  "priorytet": "Wysoki",
+  "status": "Zgloszona"
+}
+
+### Update usterka status
+PATCH http://localhost:8000/usterki/1/status
+Content-Type: application/json
+
+{
+  "status": "W_trakcie"
+}
+
+### Add new user
+POST http://localhost:8000/uzytkownicy
+Content-Type: application/json
+
+{
+  "imie": "Jan",
+  "nazwisko": "Kowalski",
+  "email": "jan@akademik.pl",
+  "rola": "STUDENT"
+  }
+
+### Get new user
+GET http://localhost:8000/uzytkownicy/1
+Accept: application/json

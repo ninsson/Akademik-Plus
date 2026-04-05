@@ -1,6 +1,8 @@
 package main
 
 import (
+	"akademik/internal/handlers"
+	"akademik/internal/repository"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,7 +24,7 @@ func main() {
 		sslmode = "require"
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname) // TODO: Change sslmode to "require" in production
 	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
@@ -46,13 +48,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database after %d attempts: %v", maxAttempts, err)
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+
+	fmt.Println("Successfully connected to database")
+
+	usterkiRepo := repository.NewUsterkiRepo(db)
+	usterkiHandler := handlers.NewUsterkiHandler(usterkiRepo)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /usterki/pokoj/{id}", usterkiHandler.GetByPokoj)
+	mux.HandleFunc("POST /usterki", usterkiHandler.Create)
+	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
+
+	uzytkownicyRepo := repository.NewUzytkownicyRepo(db)
+	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyRepo)
+
+	mux.HandleFunc("GET /uzytkownicy/{id}", uzytkownicyHandler.GetByID)
+	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
 	srv := &http.Server{
 		Addr:              ":8000",
-		Handler:           nil,
+		Handler:           mux,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      10 * time.Second,
