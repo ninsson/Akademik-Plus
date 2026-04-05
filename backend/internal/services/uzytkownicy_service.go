@@ -23,6 +23,12 @@ func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
 	if strings.TrimSpace(string(u.Rola)) == "" {
 		u.Rola = "STUDENT"
 	}
+
+	existing, err := s.repo.GetByEmail(u.Email)
+	if err == nil && existing != nil {
+		return errors.New("email already in use")
+	}
+	
 	return s.repo.Create(u)
 }
 
