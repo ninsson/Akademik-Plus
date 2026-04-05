@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -27,7 +29,11 @@ func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	uzytkownik, err := h.repo.GetByID(id)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Error during user retrieval", http.StatusInternalServerError)
 		return
 	}
 
