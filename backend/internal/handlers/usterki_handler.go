@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"akademik/internal/models"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -107,6 +109,10 @@ func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	err = h.repo.UpdateStatus(id, nowyStatus)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Failed to update usterka status", http.StatusInternalServerError)
+			return
+		}
 		http.Error(w, "Failed to update usterka status", http.StatusInternalServerError)
 		return
 	}

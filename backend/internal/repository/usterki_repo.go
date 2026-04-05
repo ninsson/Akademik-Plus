@@ -2,6 +2,7 @@ package repository
 
 import (
 	"akademik/internal/models"
+	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -47,6 +48,18 @@ func (r *UsterkiRepo) GetByPokojID(pokojID int) ([]models.Usterka, error) {
 }
 
 func (r *UsterkiRepo) UpdateStatus(id int, status models.StatusNaprawy) error {
-	_, err := r.db.Exec("UPDATE usterki SET status = $1 WHERE id = $2", status, id)
-	return err
+	result, err := r.db.Exec("UPDATE usterki SET status = $1 WHERE id = $2", status, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
