@@ -57,9 +57,20 @@ func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateUser(&nowy); err != nil {
-		http.Error(w, "Error during user save", http.StatusInternalServerError)
-		return
+	err := h.service.CreateUser(&nowy)
+
+	if err != nil {
+		switch err.Error() {
+		case "invalid email":
+			http.Error(w, "Invalid email format", http.StatusBadRequest)
+			return
+		case "email already in use":
+			http.Error(w, "Email already in use", http.StatusConflict)
+			return
+		default:
+			http.Error(w, "Error during user creation", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
