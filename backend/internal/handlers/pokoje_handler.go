@@ -2,24 +2,25 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"akademik/internal/models"
-	"akademik/internal/repository"
+	"akademik/internal/services"
 )
 
 type PokojeHandler struct {
-	repo *repository.PokojeRepo
+	svc services.PokojeService
 }
 
-func NewPokojeHandler(repo *repository.PokojeRepo) *PokojeHandler {
-	return &PokojeHandler{repo: repo}
+func NewPokojeHandler(svc services.PokojeService) *PokojeHandler {
+	return &PokojeHandler{svc: svc}
 }
 
 func (h *PokojeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	pokoje, err := h.repo.GetAll()
+	pokoje, err := h.svc.GetAll(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch pokoje", http.StatusInternalServerError)
 		return
@@ -52,7 +53,7 @@ func (h *PokojeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.repo.Create(&p)
+	id, err := h.svc.Create(r.Context(), &p)
 	if err != nil {
 		http.Error(w, "Failed to create pokoj", http.StatusInternalServerError)
 		return
@@ -75,13 +76,12 @@ func (h *PokojeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := h.repo.Delete(id)
-	if err != nil {
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			http.Error(w, "Pokój not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to delete pokoj", http.StatusInternalServerError)
-		return
-	}
-	if rows == 0 {
-		http.Error(w, "Pokój not found", http.StatusNotFound)
 		return
 	}
 

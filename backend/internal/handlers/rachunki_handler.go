@@ -2,18 +2,19 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"akademik/internal/repository"
+	"akademik/internal/services"
 )
 
 type RachunkiHandler struct {
-	repo *repository.RachunkiRepo
+	svc services.RachunkiService
 }
 
-func NewRachunkiHandler(repo *repository.RachunkiRepo) *RachunkiHandler {
-	return &RachunkiHandler{repo: repo}
+func NewRachunkiHandler(svc services.RachunkiService) *RachunkiHandler {
+	return &RachunkiHandler{svc: svc}
 }
 
 func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,7 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rachunki, err := h.repo.GetByUzytkownikID(id)
+	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
 		return
@@ -44,13 +45,12 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := h.repo.MarkAsPaid(numer)
-	if err != nil {
+	if err := h.svc.MarkAsPaid(r.Context(), numer); err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			http.Error(w, "Rachunek not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to mark invoice as paid", http.StatusInternalServerError)
-		return
-	}
-	if rows == 0 {
-		http.Error(w, "Rachunek not found", http.StatusNotFound)
 		return
 	}
 
