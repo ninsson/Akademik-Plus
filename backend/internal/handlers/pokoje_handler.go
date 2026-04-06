@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,6 +55,10 @@ func (h *PokojeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.Create(&p); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Related resource not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to create pokoj", http.StatusInternalServerError)
 		return
 	}
@@ -74,11 +80,15 @@ func (h *PokojeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.Delete(id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Pokój not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to delete pokoj", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Pokoj deleted"}`))
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Pokój usunięty"})
 }

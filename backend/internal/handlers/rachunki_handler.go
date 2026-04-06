@@ -3,10 +3,10 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"akademik/internal/models"
 	"akademik/internal/repository"
 )
 
@@ -27,12 +27,20 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 	}
 
 	rachunki, err := h.repo.GetByUzytkownikID(id)
-    if err != nil {
-        http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(rachunki)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Rachunki not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
@@ -43,11 +51,15 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.MarkAsPaid(numer); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Rachunek not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to mark invoice as paid", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Rachunek oznaczony jako opłacony"}`))
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Rachunek oznaczony jako opłacony"})
 }
