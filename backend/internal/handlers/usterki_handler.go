@@ -2,22 +2,21 @@ package handlers
 
 import (
 	"akademik/internal/models"
+	"akademik/internal/services"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"akademik/internal/repository"
 )
 
 type UsterkiHandler struct {
-	repo *repository.UsterkiRepo
+	service *services.UsterkiService
 }
 
-func NewUsterkiHandler(repo *repository.UsterkiRepo) *UsterkiHandler {
-	return &UsterkiHandler{repo: repo}
+func NewUsterkiHandler(service *services.UsterkiService) *UsterkiHandler {
+	return &UsterkiHandler{service: service}
 }
 
 func (h *UsterkiHandler) GetByPokoj(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +27,7 @@ func (h *UsterkiHandler) GetByPokoj(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usterki, err := h.repo.GetByPokojID(pokojID)
+	usterki, err := h.service.GetByPokojID(pokojID)
 	if err != nil {
 		http.Error(w, "Failed to fetch usterki", http.StatusInternalServerError)
 		return
@@ -73,7 +72,7 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.repo.Create(&nowaUsterka)
+	err = h.service.CreateUsterka(&nowaUsterka)
 	if err != nil {
 		http.Error(w, "Failed to create usterka", http.StatusInternalServerError)
 		return
@@ -112,7 +111,7 @@ func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.repo.UpdateStatus(id, nowyStatus)
+	err = h.service.UpdateStatus(id, nowyStatus)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Failed to update usterka status", http.StatusInternalServerError)

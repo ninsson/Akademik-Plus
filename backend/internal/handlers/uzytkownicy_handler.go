@@ -8,15 +8,15 @@ import (
 	"strconv"
 
 	"akademik/internal/models"
-	"akademik/internal/repository"
+	"akademik/internal/services"
 )
 
 type UzytkownicyHandler struct {
-	repo *repository.UzytkownicyRepo
+	service *services.UzytkownicyService
 }
 
-func NewUzytkownicyHandler(repo *repository.UzytkownicyRepo) *UzytkownicyHandler {
-	return &UzytkownicyHandler{repo: repo}
+func NewUzytkownicyHandler(service *services.UzytkownicyService) *UzytkownicyHandler {
+	return &UzytkownicyHandler{service: service}
 }
 
 func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uzytkownik, err := h.repo.GetByID(id)
+	uzytkownik, err := h.service.GetByID(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -57,9 +57,20 @@ func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.repo.Create(&nowy); err != nil {
-		http.Error(w, "Error during user save", http.StatusInternalServerError)
-		return
+	err := h.service.CreateUser(&nowy)
+
+	if err != nil {
+		switch err.Error() {
+		case "invalid email":
+			http.Error(w, "Invalid email format", http.StatusBadRequest)
+			return
+		case "email already in use":
+			http.Error(w, "Email already in use", http.StatusConflict)
+			return
+		default:
+			http.Error(w, "Error during user creation", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

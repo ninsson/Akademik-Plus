@@ -3,6 +3,7 @@ package main
 import (
 	"akademik/internal/handlers"
 	"akademik/internal/repository"
+	"akademik/internal/services"
 	"fmt"
 	"log"
 	"net/http"
@@ -60,7 +61,8 @@ func main() {
 	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
 
 	uzytkownicyRepo := repository.NewUzytkownicyRepo(db)
-	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyRepo)
+	uzytkownicyService := services.NewUzytkownicyService(uzytkownicyRepo)
+	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyService)
 
 	mux.HandleFunc("GET /uzytkownicy/{id}", uzytkownicyHandler.GetByID)
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
