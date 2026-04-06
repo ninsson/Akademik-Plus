@@ -21,7 +21,10 @@ func (r *RachunkiRepo) GetByUzytkownikID(uzytkownikID int) ([]models.Rachunek, e
 	return rachunki, err
 }
 
-func (r *RachunkiRepo) MarkAsPaid(numerRachunku string) error {
-	_, err := r.db.Exec("UPDATE rachunki SET czy_oplacone = true WHERE numer_rachunku = $1", numerRachunku)
-	return err
+func (r *RachunkiRepo) MarkAsPaid(numerRachunku string) (int64, error) {
+	res, err := r.db.Exec("UPDATE rachunki SET czy_oplacone = true WHERE numer_rachunku = $1", numerRachunku)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }

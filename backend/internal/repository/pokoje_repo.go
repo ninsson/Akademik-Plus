@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"akademik/internal/models"
 
 	"github.com/jmoiron/sqlx"
@@ -20,13 +22,29 @@ func (r *PokojeRepo) GetAll() ([]models.Pokoj, error) {
 	return pokoje, err
 }
 
-func (r *PokojeRepo) Create(p *models.Pokoj) error {
-	query := "INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, akademik_id) VALUES (:numer_pokoju, :ile_osob, :czy_kuchnia, :akademik_id)"
-	_, err := r.db.NamedExec(query, p)
-	return err
+func (r *PokojeRepo) Create(p *models.Pokoj) (int, error) {
+	query := `INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, akademik_id)
+			  VALUES (:numer_pokoju, :ile_osob, :czy_kuchnia, :akademik_id) RETURNING id`
+	rows, err := r.db.NamedQuery(query, p)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return 0, err
+		}
+		return id, nil
+	}
+	return 0, errors.New("no id returned")
 }
 
-func (r *PokojeRepo) Delete(id int) error {
-	_, err := r.db.Exec("DELETE FROM pokoje WHERE id = $1", id)
-	return err
+func (r *PokojeRepo) Delete(id int) (int64, error) {
+	res, err := r.db.Exec("DELETE FROM pokoje WHERE id = $1", id)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
