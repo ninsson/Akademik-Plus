@@ -55,6 +55,8 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Rachunek oznaczony jako opłacony"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Rachunek oznaczony jako opłacony"}); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
