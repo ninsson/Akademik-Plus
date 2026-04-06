@@ -42,12 +42,8 @@ func (r *UzytkownicyRepo) Create(uzytkownik *models.Uzytkownik) error {
 
 func (r *UzytkownicyRepo) GetByEmail(email string) (*models.Uzytkownik, error) {
 	var uzytkownik models.Uzytkownik
-	query := "SELECT id, imie, nazwisko, email, rola FROM uzytkownicy WHERE email = $1"
-	err := r.db.QueryRow(query, email).Scan(&uzytkownik.ID, &uzytkownik.Imie, &uzytkownik.Nazwisko, &uzytkownik.Email, &uzytkownik.Rola)
-	if err != nil {
-		return nil, err
-	}
-	return &uzytkownik, nil
+	err := r.db.Get(&uzytkownik, "SELECT * FROM uzytkownicy WHERE email = $1", email)
+	return &uzytkownik, err
 }
 
 func (r *UzytkownicyRepo) GetByID(id int) (*models.Uzytkownik, error) {
