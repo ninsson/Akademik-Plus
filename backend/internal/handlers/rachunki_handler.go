@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -28,10 +26,6 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 
 	rachunki, err := h.repo.GetByUzytkownikID(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Rachunki not found", http.StatusNotFound)
-			return
-		}
 		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
 		return
 	}
@@ -50,12 +44,13 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.repo.MarkAsPaid(numer); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Rachunek not found", http.StatusNotFound)
-			return
-		}
+	rows, err := h.repo.MarkAsPaid(numer)
+	if err != nil {
 		http.Error(w, "Failed to mark invoice as paid", http.StatusInternalServerError)
+		return
+	}
+	if rows == 0 {
+		http.Error(w, "Rachunek not found", http.StatusNotFound)
 		return
 	}
 
