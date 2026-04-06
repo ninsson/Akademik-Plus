@@ -28,7 +28,7 @@ func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
 	if err == nil && existing != nil {
 		return errors.New("email already in use")
 	}
-	
+
 	return s.repo.Create(u)
 }
 
