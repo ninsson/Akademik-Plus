@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"akademik/internal/models"
 
 	"github.com/jmoiron/sqlx"
@@ -14,14 +16,19 @@ func NewRachunkiRepo(db *sqlx.DB) *RachunkiRepo {
 	return &RachunkiRepo{db: db}
 }
 
-func (r *RachunkiRepo) GetByUzytkownikID(uzytkownikID int) ([]models.Rachunek, error) {
+func (r *RachunkiRepo) GetByUzytkownikID(ctx context.Context, uzytkownikID int) ([]models.Rachunek, error) {
 	rachunki := []models.Rachunek{}
 	query := "SELECT r.* FROM rachunki r JOIN uzytkownicy u ON r.uzytkownik_id = u.id WHERE u.id = $1"
-	err := r.db.Select(&rachunki, query, uzytkownikID)
-	return rachunki, err
+	if err := r.db.SelectContext(ctx, &rachunki, query, uzytkownikID); err != nil {
+		return nil, err
+	}
+	return rachunki, nil
 }
 
-func (r *RachunkiRepo) MarkAsPaid(numerRachunku string) error {
-	_, err := r.db.Exec("UPDATE rachunki SET czy_oplacone = true WHERE numer_rachunku = $1", numerRachunku)
-	return err
+func (r *RachunkiRepo) MarkAsPaid(ctx context.Context, numerRachunku string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, "UPDATE rachunki SET czy_oplacone = true WHERE numer_rachunku = $1", numerRachunku)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
