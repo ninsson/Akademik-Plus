@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -25,7 +26,11 @@ func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
 	}
 
 	existing, err := s.repo.GetByEmail(u.Email)
-	if err == nil && existing != nil {
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	} else if existing != nil {
 		return errors.New("email already in use")
 	}
 
