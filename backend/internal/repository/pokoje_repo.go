@@ -38,6 +38,9 @@ func (r *PokojeRepo) Create(p *models.Pokoj) (int, error) {
 		}
 		return id, nil
 	}
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
 	return 0, errors.New("no id returned")
 }
 
