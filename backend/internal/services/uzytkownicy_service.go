@@ -21,7 +21,7 @@ func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
 		return errors.New("invalid email")
 	}
 	if strings.TrimSpace(string(u.Rola)) == "" {
-		u.Rola = "STUDENT"
+		u.Rola = models.Mieszkaniec
 	}
 
 	existing, err := s.repo.GetByEmail(u.Email)
