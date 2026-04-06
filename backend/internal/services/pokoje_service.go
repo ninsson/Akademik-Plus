@@ -1,10 +1,11 @@
 package services
 
 import (
-	"akademik/internal/models"
-	"akademik/internal/repository"
 	"context"
 	"database/sql"
+
+	"akademik/internal/models"
+	"akademik/internal/repository"
 )
 
 var ErrNotFound = sql.ErrNoRows
@@ -24,15 +25,15 @@ func NewPokojeService(repo *repository.PokojeRepo) PokojeService {
 }
 
 func (s *pokojeService) GetAll(ctx context.Context) ([]models.Pokoj, error) {
-	return s.repo.GetAll()
+	return s.repo.GetAll(ctx)
 }
 
 func (s *pokojeService) Create(ctx context.Context, p *models.Pokoj) (int, error) {
-	return s.repo.Create(p)
+	return s.repo.Create(ctx, p)
 }
 
 func (s *pokojeService) Delete(ctx context.Context, id int) error {
-	rows, err := s.repo.Delete(id)
+	rows, err := s.repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,7 @@ import (
 
 type RachunkiService interface {
 	GetByUzytkownikID(ctx context.Context, uzytkownikID int) ([]models.Rachunek, error)
-	MarkAsPaid(ctx context.Context, numer string) error // ErrNotFound gdy nie istnieje
+	MarkAsPaid(ctx context.Context, numer string) error
 }
 
 type rachunkiService struct {
@@ -22,11 +22,11 @@ func NewRachunkiService(repo *repository.RachunkiRepo) RachunkiService {
 }
 
 func (s *rachunkiService) GetByUzytkownikID(ctx context.Context, uzytkownikID int) ([]models.Rachunek, error) {
-	return s.repo.GetByUzytkownikID(uzytkownikID)
+	return s.repo.GetByUzytkownikID(ctx, uzytkownikID)
 }
 
 func (s *rachunkiService) MarkAsPaid(ctx context.Context, numer string) error {
-	rows, err := s.repo.MarkAsPaid(numer)
+	rows, err := s.repo.MarkAsPaid(ctx, numer)
 	if err != nil {
 		return err
 	}

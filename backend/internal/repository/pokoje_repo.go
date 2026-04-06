@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"akademik/internal/models"
@@ -16,16 +17,18 @@ func NewPokojeRepo(db *sqlx.DB) *PokojeRepo {
 	return &PokojeRepo{db: db}
 }
 
-func (r *PokojeRepo) GetAll() ([]models.Pokoj, error) {
+func (r *PokojeRepo) GetAll(ctx context.Context) ([]models.Pokoj, error) {
 	pokoje := []models.Pokoj{}
-	err := r.db.Select(&pokoje, "SELECT * FROM pokoje")
-	return pokoje, err
+	if err := r.db.SelectContext(ctx, &pokoje, "SELECT * FROM pokoje"); err != nil {
+		return nil, err
+	}
+	return pokoje, nil
 }
 
-func (r *PokojeRepo) Create(p *models.Pokoj) (int, error) {
+func (r *PokojeRepo) Create(ctx context.Context, p *models.Pokoj) (int, error) {
 	query := `INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, akademik_id)
 			  VALUES (:numer_pokoju, :ile_osob, :czy_kuchnia, :akademik_id) RETURNING id`
-	rows, err := r.db.NamedQuery(query, p)
+	rows, err := r.db.NamedQueryContext(ctx, query, p)
 	if err != nil {
 		return 0, err
 	}
@@ -44,8 +47,8 @@ func (r *PokojeRepo) Create(p *models.Pokoj) (int, error) {
 	return 0, errors.New("no id returned")
 }
 
-func (r *PokojeRepo) Delete(id int) (int64, error) {
-	res, err := r.db.Exec("DELETE FROM pokoje WHERE id = $1", id)
+func (r *PokojeRepo) Delete(ctx context.Context, id int) (int64, error) {
+	res, err := r.db.ExecContext(ctx, "DELETE FROM pokoje WHERE id = $1", id)
 	if err != nil {
 		return 0, err
 	}
