@@ -71,7 +71,7 @@ func main() {
 	uzytkownicyService := services.NewUzytkownicyService(uzytkownicyRepo)
 	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyService)
 
-	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
+	mux.Handle("GET /uzytkownicy/{id}", middleware.JWTMiddleware(http.HandlerFunc(uzytkownicyHandler.GetByID)))
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
 	srv := &http.Server{
