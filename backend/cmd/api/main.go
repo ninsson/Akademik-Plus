@@ -2,6 +2,7 @@ package main
 
 import (
 	"akademik/internal/handlers"
+	"akademik/internal/middleware"
 	"akademik/internal/repository"
 	"akademik/internal/services"
 	"fmt"
@@ -57,9 +58,9 @@ func main() {
 	usterkiHandler := handlers.NewUsterkiHandler(usterkiService)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /usterki/pokoj/{id}", usterkiHandler.GetByPokoj)
-	mux.HandleFunc("POST /usterki", usterkiHandler.Create)
-	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
+	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
+	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
+	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.UpdateStatus)))
 
 	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
 	authHandler := handlers.NewAuthHandler(authService)
@@ -70,7 +71,7 @@ func main() {
 	uzytkownicyService := services.NewUzytkownicyService(uzytkownicyRepo)
 	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyService)
 
-	mux.HandleFunc("GET /uzytkownicy/{id}", uzytkownicyHandler.GetByID)
+	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
 	srv := &http.Server{
