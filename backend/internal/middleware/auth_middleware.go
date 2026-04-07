@@ -58,6 +58,6 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
-		http.Error(w, "Sufficient permissions", http.StatusUnauthorized)
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 	})
 }
