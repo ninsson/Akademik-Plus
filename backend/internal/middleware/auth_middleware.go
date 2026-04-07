@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,13 @@ import (
 )
 
 var jwtSecretKey = []byte("your_secret_key") // TODO: Load from env variable in production
+
+type ContextKey string
+
+const (
+	UserIDKey   ContextKey = "userID"
+	UserRoleKey ContextKey = "userRole"
+)
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +45,19 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			userIDFloat, okID := claims["sub"].(float64)
+			userRole, okRole := claims["rola"].(string)
+			if !okID || !okRole {
+				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), UserIDKey, int(userIDFloat))
+			ctx = context.WithValue(ctx, UserRoleKey, userRole)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+		http.Error(w, "Sufficient permissions", http.StatusUnauthorized)
 	})
 }
