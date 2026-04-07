@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"akademik/internal/models"
 	"akademik/internal/services"
 	"database/sql"
@@ -48,6 +49,9 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	userID := r.Context().Value(middleware.UserIDKey).(int)
+	nowaUsterka.ZglaszajacyID = userID
 
 	if nowaUsterka.ZglaszajacyID <= 0 {
 		http.Error(w, "ZglaszajacyID must be a positive integer", http.StatusBadRequest)

@@ -33,7 +33,7 @@ Content-Type: application/json
   "nazwisko": "Kowalski",
   "email": "jan@akademik.pl",
   "rola": "STUDENT"
-  }
+}
 
 ### Get new user
 GET http://localhost:8000/uzytkownicy/1

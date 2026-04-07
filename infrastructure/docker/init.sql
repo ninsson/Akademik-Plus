@@ -12,15 +12,15 @@ CREATE TABLE uzytkownicy
 
 CREATE TABLE usterki
 (
-    id             SERIAL PRIMARY KEY,
-    zglaszajacy_id INT  NOT NULL REFERENCES uzytkownicy (id),
-    pokoj_id       INT  NOT NULL,
-    priorytet      TEXT NOT NULL,
-    status         TEXT NOT NULL,
-    przypis_administrator_id INT REFERENCES uzytkownicy (id),
-    opis_usterki   TEXT NOT NULL,
-    data_zgloszenia TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_aktualizacji TIMESTAMP,
+    id                          SERIAL PRIMARY KEY,
+    zglaszajacy_id              INT       NOT NULL REFERENCES uzytkownicy (id),
+    pokoj_id                    INT       NOT NULL,
+    priorytet                   TEXT      NOT NULL,
+    status                      TEXT      NOT NULL,
+    przypisany_administrator_id INT REFERENCES uzytkownicy (id),
+    opis_usterki                TEXT      NOT NULL,
+    data_zgloszenia             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_rozwiazania            TIMESTAMP
 );
 
 INSERT INTO uzytkownicy (imie, nazwisko, email, rola)

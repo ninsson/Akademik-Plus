@@ -7,6 +7,8 @@ import (
 
 	"akademik/internal/models"
 	"akademik/internal/repository"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UzytkownicyService struct {
@@ -17,7 +19,7 @@ func NewUzytkownicyService(repo *repository.UzytkownicyRepo) *UzytkownicyService
 	return &UzytkownicyService{repo: repo}
 }
 
-func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
+func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik, plainPassword string) error {
 	if !strings.Contains(u.Email, "@") {
 		return errors.New("invalid email")
 	}
@@ -33,6 +35,16 @@ func (s *UzytkownicyService) CreateUser(u *models.Uzytkownik) error {
 	} else if existing != nil {
 		return errors.New("email already in use")
 	}
+
+	if len(plainPassword) < 6 {
+		return errors.New("password must be at least 6 characters long")
+	}
+
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(hashedBytes)
 
 	return s.repo.Create(u)
 }
