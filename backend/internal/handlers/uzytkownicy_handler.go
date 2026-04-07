@@ -51,13 +51,18 @@ func (h *UzytkownicyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var nowy models.Uzytkownik
-	if err := json.NewDecoder(r.Body).Decode(&nowy); err != nil {
-		http.Error(w, "Wrong data format", http.StatusBadRequest)
+	var payload struct {
+		models.Uzytkownik
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err := h.service.CreateUser(&nowy)
+	nowy := &payload.Uzytkownik
+
+	err := h.service.CreateUser(nowy, payload.Password)
 
 	if err != nil {
 		switch err.Error() {
@@ -67,6 +72,8 @@ func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		case "email already in use":
 			http.Error(w, "Email already in use", http.StatusConflict)
 			return
+		case "password must be at least 6 characters long":
+			http.Error(w, "Password must be at least 6 characters long", http.StatusBadRequest)
 		default:
 			http.Error(w, "Error during user creation", http.StatusInternalServerError)
 			return
