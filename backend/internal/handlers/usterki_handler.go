@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"akademik/internal/middleware"
 )
 
 type UsterkiHandler struct {
@@ -48,6 +49,9 @@ func (h *UsterkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	userID := r.Context().Value(middleware.UserIDKey).(int)
+	nowaUsterka.ZglaszajacyID = userID
 
 	if nowaUsterka.ZglaszajacyID <= 0 {
 		http.Error(w, "ZglaszajacyID must be a positive integer", http.StatusBadRequest)
