@@ -20,7 +20,7 @@ CREATE TABLE usterki
     przypis_administrator_id INT REFERENCES uzytkownicy (id),
     opis_usterki             TEXT      NOT NULL,
     data_zgloszenia          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_aktualizacji        TIMESTAMP,
+    data_aktualizacji        TIMESTAMP
 );
 
 INSERT INTO uzytkownicy (imie, nazwisko, email, rola)
