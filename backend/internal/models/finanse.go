@@ -7,8 +7,8 @@ import (
 )
 
 type Cennik struct {
-	ID       int            `db:"id" json:"id"`
-	Standard StandardPokoju `db:"standard" json:"standard"`
+	ID       int             `db:"id" json:"id"`
+	Standard StandardPokoju  `db:"standard" json:"standard"`
 	Kwota    decimal.Decimal `db:"kwota" json:"kwota"`
 }
 

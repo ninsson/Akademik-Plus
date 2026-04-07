@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"akademik/internal/models"
 	"akademik/internal/services"
 	"database/sql"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"akademik/internal/middleware"
 )
 
 type UsterkiHandler struct {
