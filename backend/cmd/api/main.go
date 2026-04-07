@@ -61,6 +61,11 @@ func main() {
 	mux.HandleFunc("POST /usterki", usterkiHandler.Create)
 	mux.HandleFunc("PATCH /usterki/{id}/status", usterkiHandler.UpdateStatus)
 
+	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
+	authHandler := handlers.NewAuthHandler(authService)
+
+	mux.HandleFunc("POST /login", authHandler.Login)
+
 	uzytkownicyRepo := repository.NewUzytkownicyRepo(db)
 	uzytkownicyService := services.NewUzytkownicyService(uzytkownicyRepo)
 	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyService)
