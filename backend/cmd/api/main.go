@@ -53,7 +53,8 @@ func main() {
 	fmt.Println("Successfully connected to database")
 
 	usterkiRepo := repository.NewUsterkiRepo(db)
-	usterkiHandler := handlers.NewUsterkiHandler(usterkiRepo)
+	usterkiService := services.NewUsterkiService(usterkiRepo)
+	usterkiHandler := handlers.NewUsterkiHandler(usterkiService)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /usterki/pokoj/{id}", usterkiHandler.GetByPokoj)
