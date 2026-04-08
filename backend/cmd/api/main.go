@@ -3,6 +3,7 @@ package main
 import (
 	"akademik/internal/handlers"
 	"akademik/internal/middleware"
+	"akademik/internal/models"
 	"akademik/internal/repository"
 	"akademik/internal/services"
 	"fmt"
@@ -60,7 +61,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
 	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
-	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole("ADMINISTRATOR")(http.HandlerFunc(usterkiHandler.UpdateStatus))))
+	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
 
 	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
 	authHandler := handlers.NewAuthHandler(authService)
