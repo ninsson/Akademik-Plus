@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"akademik/internal/models"
 	"net/http"
 )
 
-func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
+func RequireRole(allowedRoles ...models.Rola) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			roleBase := r.Context().Value(UserRoleKey)
@@ -13,11 +14,13 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 				return
 			}
 
-			userRole, ok := roleBase.(string)
+			stringRole, ok := roleBase.(string)
 			if !ok {
 				http.Error(w, "Invalid user role type", http.StatusForbidden)
 				return
 			}
+
+			userRole := models.Rola(stringRole)
 
 			hasAccess := false
 			for _, role := range allowedRoles {
