@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func RBACMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
+func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			roleBase := r.Context().Value(UserRoleKey)
