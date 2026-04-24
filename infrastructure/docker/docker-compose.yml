@@ -46,5 +46,17 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ../..
+      dockerfile: frontend/Dockerfile
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   postgres_data:
