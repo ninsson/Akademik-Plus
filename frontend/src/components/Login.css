@@ -1,0 +1,125 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #cbd4db;
+  font-family: Arial, sans-serif;
+  margin: -8px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  background-color: #ffffff;
+  padding: 40px 50px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.title {
+  color: #1a0a53;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: #7b8390;
+  font-size: 14px;
+  margin-top: 0;
+  margin-bottom: 30px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  color: #7b8390;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1a0a53;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #1a0a53;
+}
+
+.submit-btn {
+  background-color: #20115b;
+  color: #ffffff;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #130a38;
+}
+
+.reset-btn {
+  background: none;
+  border: none;
+  color: #7b8390;
+  font-size: 13px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  text-decoration: underline;
+}
+
+.button-center-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.confirm-btn {
+    background-color: #1b0a5a;
+    color: #ffffff;
+    padding: 12px 40px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.confirm-btn:hover {
+    background-color: #120640;
+}
+
+.error-message {
+    margin-top: 8px;
+    color: #b91c1c; 
+    font-size: 13px;
+    text-align: left;
+}
