@@ -5,7 +5,7 @@ const AuthCode = () => {
     <div className="login-container">
       <div className="login-card">
         <h1 className="title">Akademik+</h1>
-        <p className="subtitle">Zaloguj się do systemu</p>
+        <p className="subtitle">Wprowadź kod autoryzacyjny</p>
 
         <form className="form" onSubmit={(e) => e.preventDefault()}>
           <div className="input-group">
