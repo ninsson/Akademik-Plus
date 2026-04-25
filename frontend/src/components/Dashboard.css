@@ -1,0 +1,260 @@
+/* GŁÓWNE KONTENERY */
+.dashboard-wrapper {
+    min-height: 100vh;
+    background-color: #cbd4db;
+    padding: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+    margin: -8px;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.logo-text {
+    color: #1b0a5a;
+    font-size: 36px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.welcome-text {
+    color: #1b0a5a;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* SIATKA LAYOUTU */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* KARTY (Białe tła) */
+.card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    color: #1b0a5a;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+/* ROZMIESZCZENIE NA SIATCE */
+.panel-payments {
+    grid-column: 1;
+    grid-row: 1 / span 2; /* Zajmuje dwa wiersze w pionie */
+}
+
+.panel-history {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.panel-room {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.panel-fault {
+    grid-column: 3;
+    grid-row: 1 / span 2; /* Zajmuje dwa wiersze w pionie */
+}
+
+/* --- TABELA OPŁAT --- */
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.payments-table th {
+    color: #1b0a5a;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.payments-table td {
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1b0a5a;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+}
+
+.status-badge.paid { background-color: #16a34a; }
+.status-badge.unpaid { background-color: #dc2626; }
+
+/* --- HISTORIA (TIMELINE) --- */
+.timeline {
+    position: relative;
+    margin-left: 10px;
+    border-left: 2px solid #1b0a5a;
+    padding-left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -27.5px;
+    top: 0;
+    width: 13px;
+    height: 13px;
+    background-color: white;
+    border: 2px solid #1b0a5a;
+    border-radius: 50%;
+}
+
+.timeline-dot.current {
+    background-color: #1b0a5a;
+    width: 15px;
+    height: 15px;
+    left: -29.5px;
+}
+
+.timeline-content {
+    color: #1b0a5a;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.timeline-date {
+    color: #1b0a5a;
+    font-weight: 600;
+}
+
+/* --- MÓJ POKÓJ --- */
+.room-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.room-image-placeholder {
+    width: 120px;
+    height: 100px;
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+}
+
+.room-details {
+    color: #1b0a5a;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* --- FORMULARZ USTERKI --- */
+.fault-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.fault-form input,
+.fault-form select,
+.fault-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    color: #1b0a5a;
+    font-family: inherit;
+}
+
+.fault-form input:focus,
+.fault-form select:focus,
+.fault-form textarea:focus {
+    outline: none;
+    border-color: #1b0a5a;
+}
+
+.fault-form textarea {
+    resize: vertical;
+}
+
+/* --- WSPÓLNE PRZYCISKI --- */
+.primary-btn {
+    background-color: #1b0a5a;
+    color: #ffffff;
+    padding: 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 100%;
+}
+
+.primary-btn:hover {
+    background-color: #120640;
+}
+
+.mt-auto {
+    margin-top: auto; /* Wypycha przycisk na sam dół karty */
+}
+
+/* --- RESPANSYWNOŚĆ (na mniejsze ekrany) --- */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* Na tabletach i telefonach wszystko leci jedno pod drugim */
+    }
+
+    .panel-payments,
+    .panel-history,
+    .panel-room,
+    .panel-fault {
+        grid-column: 1;
+        grid-row: auto;
+    }
+}
+
+.room-image {
+    width: 120px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+}
