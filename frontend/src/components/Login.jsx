@@ -36,12 +36,13 @@ const Login = () => {
             const data = await res.json(); // oczekujemy { token: "..." }
             if (!data.token) throw new Error('Brak tokena w odpowiedzi');
 
-            // Zapis tokena
-            localStorage.setItem('token', data.token);
+            // Zapis tokena tylko na czas bieżącej sesji przeglądarki.
+            // Docelowo preferowany jest token/sesja w ciasteczku httpOnly po stronie backendu.
+            sessionStorage.setItem('token', data.token);
 
             // opcjonalnie: możesz przekierować użytkownika dalej
             // window.location.href = '/dashboard';
-            console.log('Zalogowano, token zapisany.');
+            console.log('Zalogowano, token zapisany w sessionStorage.');
 
             // wyczyść pola / odznacz loading
             setEmail('');
