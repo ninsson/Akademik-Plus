@@ -27,15 +27,28 @@
 //
 // export default App;
 
-import Dashboard from "./components/Dashboard";
+// import Dashboard from "./components/Dashboard";
+// import './App.css';
+//
+// function App() {
+//   return (
+//       <div>
+//         <Dashboard />
+//       </div>
+//   );
+// }
+//
+// export default App;
+
+import AdminDashboard from "./components/AdminDashboard";
 import './App.css';
 
 function App() {
-  return (
-      <div>
-        <Dashboard />
-      </div>
-  );
+    return (
+        <div>
+            <AdminDashboard />
+        </div>
+    );
 }
 
 export default App;
