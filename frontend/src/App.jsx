@@ -40,13 +40,27 @@
 //
 // export default App;
 
-import AdminDashboard from "./components/AdminDashboard";
+// import AdminDashboard from "./components/AdminDashboard";
+// import './App.css';
+//
+// function App() {
+//     return (
+//         <div>
+//             <AdminDashboard />
+//         </div>
+//     );
+// }
+//
+// export default App;
+
+
 import './App.css';
+import PaymentHistory from "./components/PaymentHistory.jsx";
 
 function App() {
     return (
         <div>
-            <AdminDashboard />
+            <PaymentHistory />
         </div>
     );
 }
