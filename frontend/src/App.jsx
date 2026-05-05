@@ -1,68 +1,47 @@
-// import React from 'react';
-// import Login from './components/Login';
-// import './App.css';
-//
-// function App() {
-//   return (
-//       <div>
-//         <Login />
-//       </div>
-//   );
-// }
-//
-// export default App;
+import React from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
-
-// import React from 'react';
-// import AuthCode from './components/AuthCode';
-// import './App.css';
-//
-// function App() {
-//   return (
-//     <div>
-//       <AuthCode />
-//     </div>
-//   );
-// }
-//
-// export default App;
-
-// import Dashboard from "./components/Dashboard";
-// import './App.css';
-//
-// function App() {
-//   return (
-//       <div>
-//         <Dashboard />
-//       </div>
-//   );
-// }
-//
-// export default App;
-
-// import AdminDashboard from "./components/AdminDashboard";
-// import './App.css';
-//
-// function App() {
-//     return (
-//         <div>
-//             <AdminDashboard />
-//         </div>
-//     );
-// }
-//
-// export default App;
-
-
+import Login from './components/Login';
+import AuthCode from './components/AuthCode';
+import Dashboard from "./components/Dashboard";
+import AdminDashboard from "./components/AdminDashboard";
+import PaymentHistory from "./components/PaymentHistory";
 import './App.css';
-import PaymentHistory from "./components/PaymentHistory.jsx";
 
-function App() {
+const PageWrapper = ({ children }) => (
+    <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4 }}
+    >
+        {children}
+    </motion.div>
+);
+
+function AnimatedApp() {
+    const location = useLocation();
+
     return (
-        <div>
-            <PaymentHistory />
-        </div>
+        <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<PageWrapper><Login /></PageWrapper>} />
+                <Route path="/auth" element={<PageWrapper><AuthCode /></PageWrapper>} />
+                <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
+                <Route path="/admin" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+                <Route path="/history" element={<PageWrapper><PaymentHistory /></PageWrapper>} />
+            </Routes>
+        </AnimatePresence>
     );
 }
 
-export default App;
+export default function App() {
+    return (
+        <BrowserRouter>
+            <div className="App">
+                <AnimatedApp />
+            </div>
+        </BrowserRouter>
+    );
+}

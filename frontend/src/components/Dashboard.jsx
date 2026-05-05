@@ -10,17 +10,20 @@ const mockUserData = {
 };
 
 const mockPayments = [
-    { id: 1, date: "10-04-2026", desc: "Opłata za pokój 101, kwiecień 2026", amount: 700, status: "NIEOPŁACONE" },
-    { id: 2, date: "10-03-2026", desc: "Opłata za pokój 101, marzec 2026", amount: 700, status: "OPŁACONE" },
-    { id: 3, date: "10-02-2026", desc: "Opłata za pokój 101, luty 2026", amount: 700, status: "OPŁACONE" },
-    { id: 4, date: "10-01-2026", desc: "Opłata za pokój 101, styczeń 2026", amount: 700, status: "OPŁACONE" },
-    { id: 5, date: "10-12-2025", desc: "Opłata za pokój 101, grudzień 2025", amount: 700, status: "OPŁACONE" },
+    { id: 1, date: "10-05-2026", desc: "Opłata za pokój 101, maj 2026", amount: 700, status: "NIEOPŁACONE" },
+    { id: 2, date: "10-04-2026", desc: "Opłata za pokój 101, kwiecień 2026", amount: 700, status: "OPŁACONE" },
+    { id: 3, date: "10-03-2026", desc: "Opłata za pokój 101, marzec 2026", amount: 700, status: "OPŁACONE" },
+    { id: 4, date: "10-02-2026", desc: "Opłata za pokój 101, luty 2026", amount: 700, status: "OPŁACONE" },
+    { id: 5, date: "10-01-2026", desc: "Opłata za pokój 101, styczeń 2026", amount: 700, status: "OPŁACONE" },
+    { id: 6, date: "10-12-2025", desc: "Opłata za pokój 101, grudzień 2025", amount: 700, status: "OPŁACONE" },
+    { id: 7, date: "10-11-2025", desc: "Opłata za pokój 101, listopad 2025", amount: 700, status: "OPŁACONE" },
 ];
 
 const mockResidenceHistory = [
     { id: 1, dorm: "3 Dom Studencki", room: "Pokój 101", date: "od 01-10-2025", isCurrent: true },
-    { id: 2, dorm: "3 Dom Studencki", room: "Pokój 30", date: "od 01-10-2024", isCurrent: false },
-    { id: 3, dorm: "3 Dom Studencki", room: "Pokój 47", date: "od 01-10-2023", isCurrent: false },
+    { id: 2, dorm: "3 Dom Studencki", room: "Pokój 30", date: "01-10-2024 - 30-09-2025", isCurrent: false },
+    { id: 3, dorm: "3 Dom Studencki", room: "Pokój 47", date: "01-10-2023 - 30-09-2024", isCurrent: false },
+    { id: 4, dorm: "1 Dom Studencki", room: "Pokój 202", date: "01-10-2022 - 30-09-2023", isCurrent: false },
 ];
 
 const mockRoomDetails = {
