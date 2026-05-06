@@ -36,9 +36,9 @@ CREATE TABLE akademiki
 (
     id  SERIAL PRIMARY KEY,
     adres TEXT NOT NULL,
-    IloscPieter INT DEFAULT 4,
-    CzyWinda BOOLEAN NOT NULL DEFAULT TRUE,
-    CzyDostosowany BOOLEAN NOT NULL DEFAULT TRUE
+    ilosc_pieter INT DEFAULT 4,
+    czy_winda BOOLEAN NOT NULL DEFAULT TRUE,
+    czy_dostosowany BOOLEAN NOT NULL DEFAULT TRUE
 )
 
 CREATE TYPE StatusPokoju AS ENUM ('Dostepny', 'W_remoncie')
@@ -47,13 +47,13 @@ CREATE TYPE StandardPokoju AS ENUM ('Standard', 'Podwyzszony')
 CREATE TABLE pokoj
 (
     id SERIAL PRIMARY KEY,
-    NumerPokoju STRING NOT NULL,
-    IleOsob INT NOT NULL DEFAULT 2,
-    CzyKuchnia BOOLEAN NOT NULL DEFAULT FALSE,
-    CzyToaleta BOOLEAN NOT NULL DEFAULT TRUE,
-    CzyDostosowany BOOLEAN NOT NULL DEFAULT FALSE,
-    Pietro INT NOT NULL,
-    Status StatusPokoju NOT NULL DEFAULT 'Dostepny',
-    Standard StandardPokoju NOT NULL Default 'Standard',
-    AkademikID INT NOT NULL REFERENCES akademiki(id)
+    numer_pokoju TEXT NOT NULL,
+    ile_osob INT NOT NULL DEFAULT 2,
+    czy_kuchnia BOOLEAN NOT NULL DEFAULT FALSE,
+    czy_toaleta BOOLEAN NOT NULL DEFAULT TRUE,
+    czy_dostosowany BOOLEAN NOT NULL DEFAULT FALSE,
+    pietro INT NOT NULL,
+    status_pokoju StatusPokoju NOT NULL DEFAULT 'Dostepny',
+    standard StandardPokoju NOT NULL Default 'Standard',
+    akademik_id INT NOT NULL REFERENCES akademiki(id)
 )
