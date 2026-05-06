@@ -39,6 +39,7 @@ services:
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
       DB_NAME: ${POSTGRES_DB:-mydb}
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8000:8000"
     restart: unless-stopped
