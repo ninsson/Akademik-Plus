@@ -24,12 +24,6 @@ CREATE TABLE usterki
     data_rozwiazania            TIMESTAMP
 );
 
-INSERT INTO uzytkownicy (imie, nazwisko, email, rola)
-VALUES ('Jan', 'Kowalski', 'jan@akademik.pl', 'STUDENT');
-
-INSERT INTO usterki (zglaszajacy_id, pokoj_id, opis_usterki, priorytet, status)
-VALUES (1, 101, 'Kran przecieka', 'WYSOKI', 'Zgloszona');
-
 --  akademiki.go
 
 CREATE TABLE akademiki
@@ -86,3 +80,31 @@ CREATE TABLE rachunki
     okres_rozliczeniowy TEXT NOT NULL,
     dodatkowe_uwagi TEXT
 );
+
+-- Test password: "Haslo123"
+INSERT INTO uzytkownicy (imie, nazwisko, email, numer_telefonu, username, password_hash, rola, czy_wymaga_dostosowan)
+VALUES
+    ('Jan', 'Kowalski', 'jan@akademik.pl', '123456789', 'jkowalski', '$2a$10$7Y2kXmXyG1H7U3m3W.0UGe8l7YfM4fV/r8nK.9XzGv0K5.2XzVzY.', 'Mieszkaniec', FALSE),
+    ('Anna', 'Admin', 'admin@akademik.pl', '987654321', 'aadmin', '$2a$10$7Y2kXmXyG1H7U3m3W.0UGe8l7YfM4fV/r8nK.9XzGv0K5.2XzVzY.', 'Administrator', FALSE);
+
+INSERT INTO akademiki (adres, ilosc_pieter, czy_winda, czy_dostosowany)
+VALUES ('ul. Akademicka 1, Warszawa', 5, TRUE, TRUE);
+
+INSERT INTO cennik (standard, kwota)
+VALUES
+    ('Standard', 600.00),
+    ('Podwyzszony', 850.00);
+
+INSERT INTO pokoj (numer_pokoju, ile_osob, czy_kuchnia, czy_toaleta, czy_dostosowany, pietro, status_pokoju, standard, akademik_id)
+VALUES
+    ('101', 2, FALSE, TRUE, FALSE, 1, 'Dostepny', 'Standard', 1),
+    ('202', 1, TRUE, TRUE, TRUE, 2, 'Dostepny', 'Podwyzszony', 1);
+
+INSERT INTO zakwaterowania (mieszkaniec_id, pokoj_id, poczatek_zakwaterowania, koniec_zakwaterowania)
+VALUES (1, 1, '2026-10-01', '2027-06-30');
+
+INSERT INTO usterki (zglaszajacy_id, pokoj_id, opis_usterki, priorytet, status)
+VALUES (1, 1, 'Kran przecieka w łazience', 'Pilne', 'Przyjeto');
+
+INSERT INTO rachunki (numer_rachunku, zakwaterowanie_id, kwota, czy_oplacone, data_wystawienia, termin_do_zaplacenia, okres_rozliczeniowy, dodatkowe_uwagi)
+VALUES ('RACH/2026/10/01', 1, 600.00, FALSE, '2026-10-01', '2026-10-15', 'Październik 2026', 'Czynsz podstawowy');
