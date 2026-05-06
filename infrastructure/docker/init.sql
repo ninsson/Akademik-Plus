@@ -29,3 +29,14 @@ VALUES ('Jan', 'Kowalski', 'jan@akademik.pl', 'STUDENT');
 
 INSERT INTO usterki (zglaszajacy_id, pokoj_id, opis_usterki, priorytet, status)
 VALUES (1, 101, 'Kran przecieka', 'WYSOKI', 'Zgloszona');
+
+--  akademiki.go
+
+CREATE TABLE akademiki
+(
+    id  SERIAL PRIMARY KEY,
+    adres TEXT NOT NULL,
+    IloscPieter INT DEFAULT 4,
+    CzyWinda BOOLEAN NOT NULL DEFAULT TRUE,
+    CzyDostosowany BOOLEAN NOT NULL DEFAULT TRUE
+)
