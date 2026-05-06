@@ -74,3 +74,15 @@ CREATE TABLE cennik
     kwota DECIMAL NOT NULL
 )
 
+CREATE TABLE rachunki
+(
+    numer_rachunku TEXT PRIMARY KEY,
+    zakwaterowanie_id INT NOT NULL REFERENCES zakwaterowania(id),
+    kwota DECIMAL NOT NULL,
+    czy_oplacone BOOLEAN NOT NULL DEFAULT FALSE,
+    data_wystawienia DATE NOT NULL DEFAULT "now()",
+    termin_do_zaplacenia DATE NOT NULL,
+    termin_platnosci DATE,
+    okres_rozliczeniowy TEXT NOT NULL,
+    dodatkowe_uwagi TEXT
+)
