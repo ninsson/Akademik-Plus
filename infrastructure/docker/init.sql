@@ -39,10 +39,10 @@ CREATE TABLE akademiki
     ilosc_pieter INT DEFAULT 4,
     czy_winda BOOLEAN NOT NULL DEFAULT TRUE,
     czy_dostosowany BOOLEAN NOT NULL DEFAULT TRUE
-)
+);
 
-CREATE TYPE StatusPokoju AS ENUM ('Dostepny', 'W_remoncie')
-CREATE TYPE StandardPokoju AS ENUM ('Standard', 'Podwyzszony')
+CREATE TYPE StatusPokoju AS ENUM ('Dostepny', 'W_remoncie');
+CREATE TYPE StandardPokoju AS ENUM ('Standard', 'Podwyzszony');
 
 CREATE TABLE pokoj
 (
@@ -56,4 +56,4 @@ CREATE TABLE pokoj
     status_pokoju StatusPokoju NOT NULL DEFAULT 'Dostepny',
     standard StandardPokoju NOT NULL Default 'Standard',
     akademik_id INT NOT NULL REFERENCES akademiki(id)
-)
+);
