@@ -7,7 +7,8 @@ CREATE TABLE uzytkownicy
     numer_telefonu TEXT UNIQUE NOT NULL,
     username       TEXT UNIQUE NOT NULL,
     password_hash  TEXT        NOT NULL,
-    rola           TEXT        NOT NULL czy_wymaga_dostosowan BOOLEAN NOT NULL DEFAULT FALSE
+    rola           TEXT        NOT NULL,
+    czy_wymaga_dostosowan BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE usterki
