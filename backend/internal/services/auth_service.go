@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"akademik/internal/repository"
@@ -10,7 +11,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecretKey = []byte("your_secret_key") // TODO: Load from env variable in production
+func getJWTsecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return []byte("your_secret_key")
+	}
+	return []byte(secret)
+}
+
+var jwtSecretKey = []byte("your_secret_key")
 
 type AuthService struct {
 	repo *repository.UzytkownicyRepo
