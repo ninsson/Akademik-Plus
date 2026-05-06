@@ -80,7 +80,7 @@ CREATE TABLE rachunki
     zakwaterowanie_id INT NOT NULL REFERENCES zakwaterowania(id),
     kwota DECIMAL(10, 2) NOT NULL,
     czy_oplacone BOOLEAN NOT NULL DEFAULT FALSE,
-    data_wystawienia DATE NOT NULL DEFAULT "now()",
+    data_wystawienia DATE NOT NULL DEFAULT CURRENT_DATE,
     termin_do_zaplacenia DATE NOT NULL,
     termin_platnosci DATE,
     okres_rozliczeniowy TEXT NOT NULL,
