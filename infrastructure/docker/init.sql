@@ -63,6 +63,6 @@ CREATE TABLE zakwaterowania
     id SERIAL PRIMARY KEY,
     mieszkaniec_id INT NOT NULL REFERENCES uzytkownicy(id),
     pokoj_id INT NOT NULL REFERENCES pokoj(id),
-    poczatek_zakwaterowania TIME NOT NULL,
-    koniec_zakwaterowania TIME NOT NULL
+    poczatek_zakwaterowania DATE NOT NULL,
+    koniec_zakwaterowania DATE NOT NULL
 );
