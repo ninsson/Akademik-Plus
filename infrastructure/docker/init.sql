@@ -66,3 +66,11 @@ CREATE TABLE zakwaterowania
     poczatek_zakwaterowania DATE NOT NULL,
     koniec_zakwaterowania DATE NOT NULL
 );
+
+CREATE TABLE cennik
+(
+    id SERIAL PRIMARY KEY,
+    standard StandardPokoju NOT NULL DEFAULT 'Standard',
+    kwota DECIMAL NOT NULL
+)
+
