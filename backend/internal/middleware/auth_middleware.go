@@ -4,12 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecretKey = []byte("your_secret_key") // TODO: Load from env variable in production
+func getJWTsecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return []byte("your_secret_key")
+	}
+	return []byte(secret)
+}
+
+var jwtSecretKey = []byte("your_secret_key")
 
 type ContextKey string
 
