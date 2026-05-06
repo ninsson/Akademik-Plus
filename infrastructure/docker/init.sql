@@ -40,3 +40,20 @@ CREATE TABLE akademiki
     CzyWinda BOOLEAN NOT NULL DEFAULT TRUE,
     CzyDostosowany BOOLEAN NOT NULL DEFAULT TRUE
 )
+
+CREATE TYPE StatusPokoju AS ENUM ('Dostepny', 'W_remoncie')
+CREATE TYPE StandardPokoju AS ENUM ('Standard', 'Podwyzszony')
+
+CREATE TABLE pokoj
+(
+    id SERIAL PRIMARY KEY,
+    NumerPokoju STRING NOT NULL,
+    IleOsob INT NOT NULL DEFAULT 2,
+    CzyKuchnia BOOLEAN NOT NULL DEFAULT FALSE,
+    CzyToaleta BOOLEAN NOT NULL DEFAULT TRUE,
+    CzyDostosowany BOOLEAN NOT NULL DEFAULT FALSE,
+    Pietro INT NOT NULL,
+    Status StatusPokoju NOT NULL DEFAULT 'Dostepny',
+    Standard StandardPokoju NOT NULL Default 'Standard',
+    AkademikID INT NOT NULL REFERENCES akademiki(id)
+)
