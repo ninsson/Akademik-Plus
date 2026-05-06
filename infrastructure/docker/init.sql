@@ -71,14 +71,14 @@ CREATE TABLE cennik
 (
     id SERIAL PRIMARY KEY,
     standard StandardPokoju NOT NULL DEFAULT 'Standard',
-    kwota DECIMAL NOT NULL
+    kwota DECIMAL(10, 2) NOT NULL
 );
 
 CREATE TABLE rachunki
 (
     numer_rachunku TEXT PRIMARY KEY,
     zakwaterowanie_id INT NOT NULL REFERENCES zakwaterowania(id),
-    kwota DECIMAL NOT NULL,
+    kwota DECIMAL(10, 2) NOT NULL,
     czy_oplacone BOOLEAN NOT NULL DEFAULT FALSE,
     data_wystawienia DATE NOT NULL DEFAULT "now()",
     termin_do_zaplacenia DATE NOT NULL,
