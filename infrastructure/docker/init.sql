@@ -57,3 +57,12 @@ CREATE TABLE pokoj
     standard StandardPokoju NOT NULL Default 'Standard',
     akademik_id INT NOT NULL REFERENCES akademiki(id)
 );
+
+CREATE TABLE zakwaterowania
+(
+    id SERIAL PRIMARY KEY,
+    mieszkaniec_id INT NOT NULL REFERENCES uzytkownicy(id),
+    pokoj_id INT NOT NULL REFERENCES pokoj(id),
+    poczatek_zakwaterowania TIME NOT NULL,
+    koniec_zakwaterowania TIME NOT NULL
+);
