@@ -75,9 +75,11 @@ func main() {
 	mux.Handle("GET /uzytkownicy/{id}", middleware.JWTMiddleware(http.HandlerFunc(uzytkownicyHandler.GetByID)))
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
+	handlerWithCors := middleware.CORS(mux)
+
 	srv := &http.Server{
 		Addr:              ":8000",
-		Handler:           mux,
+		Handler:           handlerWithCors,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      10 * time.Second,
