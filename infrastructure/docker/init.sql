@@ -72,7 +72,7 @@ CREATE TABLE cennik
     id SERIAL PRIMARY KEY,
     standard StandardPokoju NOT NULL DEFAULT 'Standard',
     kwota DECIMAL NOT NULL
-)
+);
 
 CREATE TABLE rachunki
 (
@@ -85,4 +85,4 @@ CREATE TABLE rachunki
     termin_platnosci DATE,
     okres_rozliczeniowy TEXT NOT NULL,
     dodatkowe_uwagi TEXT
-)
+);
