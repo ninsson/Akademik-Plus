@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { jsPDF } from 'jspdf';
 import './PaymentHistory.css';
 
 const initialMockPayments = [
@@ -14,6 +15,15 @@ const initialMockPayments = [
     { id: 10, date: "10-08-2025", desc: "Opłata za pokój 30, sierpień 2025", amount: 700, status: "OPŁACONE" },
 ];
 
+const removePolishChars = (text) => {
+    if (!text) return "";
+    const charMap = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    };
+    return text.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, match => charMap[match]);
+};
+
 const PaymentHistory = () => {
     // Stan dla listy płatności
     const [payments, setPayments] = useState(initialMockPayments);
@@ -23,8 +33,59 @@ const PaymentHistory = () => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleGeneratePdf = (id) => {
+        // Znajdujemy płatność po ID z aktualnego stanu 'payments'
+        const payment = payments.find(p => p.id === id);
+        if (!payment) return;
+
         console.log(`Generowanie rachunku PDF dla płatności o ID: ${id}`);
-        // Logika generowania PDF
+
+        const doc = new jsPDF();
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("Potwierdzenie platnosci", 20, 20);
+
+        doc.setFontSize(16);
+        doc.setTextColor(100, 100, 100);
+        doc.text("System Akademik+", 20, 30);
+
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(20, 35, 190, 35);
+
+        doc.setTextColor(0, 0, 0);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+
+        doc.text(`Numer transakcji: #TXN-${payment.id}-AKD`, 20, 50);
+        doc.text(`Data wystawienia: ${payment.date}`, 20, 60);
+
+        doc.text(`Tytulem: ${removePolishChars(payment.desc)}`, 20, 70);
+
+        // Kwota i status
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text(`Kwota: ${payment.amount} PLN`, 20, 90);
+
+        doc.text("Status: ", 20, 100);
+
+        if (payment.status === "OPŁACONE") {
+            doc.setTextColor(0, 150, 0);
+        } else {
+            doc.setTextColor(200, 0, 0);
+        }
+
+        doc.text(removePolishChars(payment.status), 40, 100);
+
+        // Stopka
+        doc.setTextColor(150, 150, 150);
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(10);
+        doc.text("Dokument wygenerowany automatycznie, nie wymaga podpisu.", 20, 130);
+
+        // Pobieranie
+        doc.save(`Rachunek_${payment.id}_${payment.date}.pdf`);
     };
 
     const handleOpenPaymentModal = () => {
