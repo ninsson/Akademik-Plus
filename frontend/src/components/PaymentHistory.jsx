@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './PaymentHistory.css';
 
-const mockPayments = [
+const initialMockPayments = [
     { id: 1, date: "10-05-2026", desc: "Opłata za pokój 101, maj 2026", amount: 700, status: "NIEOPŁACONE" },
     { id: 2, date: "10-04-2026", desc: "Opłata za pokój 101, kwiecień 2026", amount: 700, status: "OPŁACONE" },
     { id: 3, date: "10-03-2026", desc: "Opłata za pokój 101, marzec 2026", amount: 700, status: "OPŁACONE" },
@@ -15,24 +15,52 @@ const mockPayments = [
 ];
 
 const PaymentHistory = () => {
+    // Stan dla listy płatności
+    const [payments, setPayments] = useState(initialMockPayments);
+    // Stan kontrolujący widoczność pop-upa
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    // Stan symulujący czas przetwarzania płatności
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const handleGeneratePdf = (id) => {
         console.log(`Generowanie rachunku PDF dla płatności o ID: ${id}`);
         // Logika generowania PDF
     };
 
-    const handlePayment = () => {
-        console.log("Przekierowanie do bramki płatności...");
+    const handleOpenPaymentModal = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleConfirmPayment = () => {
+        setIsProcessing(true); // Pokazujemy loader/napis "Przetwarzanie..."
+
+        // Symulacja opóźnienia sieci (1.5 sekundy)
+        setTimeout(() => {
+            // Zmieniamy status wszystkich nieopłaconych rachunków na OPŁACONE
+            setPayments(prevPayments =>
+                prevPayments.map(payment =>
+                    payment.status === "NIEOPŁACONE"
+                        ? { ...payment, status: "OPŁACONE" }
+                        : payment
+                )
+            );
+
+            setIsProcessing(false);
+            setIsModalOpen(false); // Zamykamy pop-up
+            alert("Płatność zakończona sukcesem!");
+        }, 1500);
     };
 
     return (
         <div className="payment-page-wrapper">
-            {/* Nagłówek (tylko logo, bez powitania) */}
             <header className="payment-header">
                 <h1 className="payment-logo-text">Akademik+</h1>
             </header>
 
-            {/* Wyśrodkowana, szeroka karta */}
             <div className="payment-expanded-card">
                 <h2 className="payment-card-title">Historia opłat</h2>
 
@@ -48,7 +76,7 @@ const PaymentHistory = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {mockPayments.map((payment) => (
+                        {payments.map((payment) => (
                             <tr key={payment.id}>
                                 <td className="col-date">{payment.date}</td>
                                 <td className="col-desc">{payment.desc}</td>
@@ -72,10 +100,44 @@ const PaymentHistory = () => {
                     </table>
                 </div>
 
-                <button className="payment-main-btn" onClick={handlePayment}>
+                {/* Przycisk otwierający udawaną bramkę */}
+                <button className="payment-main-btn" onClick={handleOpenPaymentModal}>
                     Dokonaj płatności
                 </button>
             </div>
+
+            {/* Udawany Pop-up (Modal) */}
+            {isModalOpen && (
+                <div className="payment-modal-overlay">
+                    <div className="payment-modal-content">
+                        <h2>Udawana bramka płatności</h2>
+                        <p>Wybierz metodę płatności i zatwierdź.</p>
+
+                        <div className="fake-payment-methods">
+                            <label><input type="radio" name="method" defaultChecked /> BLIK</label>
+                            <label><input type="radio" name="method" /> Karta płatnicza</label>
+                            <label><input type="radio" name="method" /> Przelew online</label>
+                        </div>
+
+                        <div className="modal-buttons">
+                            <button
+                                className="cancel-btn"
+                                onClick={handleCloseModal}
+                                disabled={isProcessing}
+                            >
+                                Anuluj
+                            </button>
+                            <button
+                                className="confirm-btn"
+                                onClick={handleConfirmPayment}
+                                disabled={isProcessing}
+                            >
+                                {isProcessing ? "Przetwarzanie..." : "Zapłać 700 zł"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
