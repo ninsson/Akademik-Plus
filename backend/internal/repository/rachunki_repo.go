@@ -18,7 +18,11 @@ func NewRachunkiRepo(db *sqlx.DB) *RachunkiRepo {
 
 func (r *RachunkiRepo) GetByUzytkownikID(ctx context.Context, uzytkownikID int) ([]models.Rachunek, error) {
 	rachunki := []models.Rachunek{}
-	query := "SELECT r.* FROM rachunki r JOIN uzytkownicy u ON r.uzytkownik_id = u.id WHERE u.id = $1"
+	query := `
+        SELECT r.* FROM rachunki r
+        JOIN zakwaterowania z ON r.zakwaterowanie_id = z.id
+        WHERE z.mieszkaniec_id = $1
+    `
 	if err := r.db.SelectContext(ctx, &rachunki, query, uzytkownikID); err != nil {
 		return nil, err
 	}
