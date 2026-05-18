@@ -62,6 +62,9 @@ func main() {
 	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
 	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
 	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
+	mux.Handle("GET /usterki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.GetAll)),
+	))
 
 	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
 	authHandler := handlers.NewAuthHandler(authService)
@@ -88,8 +91,8 @@ func main() {
 
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
-  
-  handlerWithCORS := middleware.CORS(mux)
+
+	handlerWithCORS := middleware.CORS(mux)
 
 	srv := &http.Server{
 		Addr:              ":8000",
