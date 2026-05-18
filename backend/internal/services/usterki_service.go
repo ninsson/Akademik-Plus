@@ -16,7 +16,9 @@ func NewUsterkiService(repo *repository.UsterkiRepo) *UsterkiService {
 
 func (s *UsterkiService) CreateUsterka(u *models.Usterka) error {
 	u.Status = models.Przyjeto
-	u.Priorytet = nil
+	if u.Priorytet == nil {
+		return errors.New("priorytet zgłoszenia jest wymagany")
+	}
 
 	return s.repo.Create(u)
 }
