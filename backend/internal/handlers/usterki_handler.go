@@ -131,7 +131,7 @@ func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UsterkiHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	usterki, err := h.service.GetAllUsterki()
+	usterki, err := h.service.GetAll()
 	if err != nil {
 		http.Error(w, "Failed to fetch usterki", http.StatusInternalServerError)
 		return
