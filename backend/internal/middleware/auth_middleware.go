@@ -18,7 +18,7 @@ func getJWTsecret() []byte {
 	return []byte(secret)
 }
 
-var jwtSecretKey = []byte("your_secret_key")
+var jwtSecretKey = getJWTsecret()
 
 type ContextKey string
 
