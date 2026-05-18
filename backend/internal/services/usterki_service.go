@@ -7,11 +7,12 @@ import (
 )
 
 type UsterkiService struct {
-	repo *repository.UsterkiRepo
+	repo       *repository.UsterkiRepo
+	pokojeRepo *repository.PokojeRepo
 }
 
-func NewUsterkiService(repo *repository.UsterkiRepo) *UsterkiService {
-	return &UsterkiService{repo: repo}
+func NewUsterkiService(repo *repository.UsterkiRepo, pokojeRepo *repository.PokojeRepo) *UsterkiService {
+	return &UsterkiService{repo: repo, pokojeRepo: pokojeRepo}
 }
 
 func (s *UsterkiService) CreateUsterka(u *models.Usterka) error {
@@ -22,8 +23,9 @@ func (s *UsterkiService) CreateUsterka(u *models.Usterka) error {
 	if !u.Priorytet.IsValid() {
 		return errors.New("nieprawidłowy priorytet zgłoszenia")
 	}
-	if u.PokojID <= 0 {
-		return errors.New("nieprawidłowy identyfikator pokoju")
+	_, err := s.pokojeRepo.GetByID(u.PokojID)
+	if err != nil {
+		return errors.New("wskazany pokój nie istnieje")
 	}
 
 	return s.repo.Create(u)
