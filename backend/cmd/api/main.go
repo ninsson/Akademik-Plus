@@ -54,15 +54,6 @@ func main() {
 
 	fmt.Println("Successfully connected to database")
 
-	usterkiRepo := repository.NewUsterkiRepo(db)
-	usterkiService := services.NewUsterkiService(usterkiRepo)
-	usterkiHandler := handlers.NewUsterkiHandler(usterkiService)
-
-	mux := http.NewServeMux()
-	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
-	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
-	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
-
 	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
 	authHandler := handlers.NewAuthHandler(authService)
 
@@ -82,14 +73,23 @@ func main() {
 	mux.Handle("GET /pokoje", middleware.JWTMiddleware(http.HandlerFunc(pokojeHandler.GetAll)))
 	mux.Handle("POST /pokoje", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(pokojeHandler.Create))))
 
+	usterkiRepo := repository.NewUsterkiRepo(db)
+	usterkiService := services.NewUsterkiService(usterkiRepo, pokojeRepo)
+	usterkiHandler := handlers.NewUsterkiHandler(usterkiService)
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
+	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
+	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
+
 	rachunkiRepo := repository.NewRachunkiRepo(db)
 	rachunkiService := services.NewRachunkiService(rachunkiRepo)
 	rachunkiHandler := handlers.NewRachunkiHandler(rachunkiService)
 
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
-  
-  handlerWithCORS := middleware.CORS(mux)
+
+	handlerWithCORS := middleware.CORS(mux)
 
 	srv := &http.Server{
 		Addr:              ":8000",
