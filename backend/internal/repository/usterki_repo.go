@@ -63,3 +63,25 @@ func (r *UsterkiRepo) UpdateStatus(id int, status models.StatusNaprawy) error {
 	}
 	return nil
 }
+
+func (r *UsterkiRepo) GetAll() ([]models.Usterka, error) {
+	var usterki []models.Usterka
+
+	query := ` 
+	SELECT
+	id,
+		zglaszajacy_id,
+		pokoj_id,
+		priorytet,
+		status,
+		przypisany_administrator_id,
+		opis_usterki,
+		data_zgloszenia,
+		data_rozwiazania
+	FROM usterki
+	ORDER BY data_zgloszenia DESC
+	`
+
+	err := r.db.Select(&usterki, query)
+	return usterki, err
+}
