@@ -140,3 +140,72 @@
         overflow-x: auto; /* Pozwala przewijać tabelę na boki na telefonie */
     }
 }
+
+/* --- Style dla Modala (Pop-upa) --- */
+
+.payment-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6); /* Przyciemnienie tła */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Zapewnia, że modal jest na samym wierzchu */
+}
+
+.payment-modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+}
+
+.fake-payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+    text-align: left;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.confirm-btn {
+    padding: 10px 20px;
+    border: none;
+    background: #007bff; /* Dopasuj kolor do swojej aplikacji */
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    flex: 1;
+    font-weight: bold;
+}
+
+.confirm-btn:disabled, .cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
