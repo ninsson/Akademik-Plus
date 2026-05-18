@@ -38,6 +38,36 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (h *RachunkiHandler) GetMojeRachunki(w http.ResponseWriter, r *http.Request) {
+	userIDval := r.Context().Value("userID")
+
+	if userIDval == nil {
+		http.Error(w, "No user ID found", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	switch v := userIDval.(type) {
+	case float64:
+		userID = int(v)
+	case int:
+		userID = v
+	default:
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
 func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 	numer := r.PathValue("numer")
 	if numer == "" {
