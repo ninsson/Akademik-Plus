@@ -54,3 +54,15 @@ func (r *PokojeRepo) Delete(ctx context.Context, id int) (int64, error) {
 	}
 	return res.RowsAffected()
 }
+
+func (r *PokojeRepo) GetByID(id int) (*models.Pokoj, error) {
+	var pokoj models.Pokoj
+
+	query := `SELECT * FROM pokoje WHERE id = $1`
+
+	err := r.db.Get(&pokoj, query, id)
+	if err != nil {
+		return nil, err
+	}
+	return &pokoj, nil
+}

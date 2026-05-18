@@ -7,16 +7,26 @@ import (
 )
 
 type UsterkiService struct {
-	repo *repository.UsterkiRepo
+	repo       *repository.UsterkiRepo
+	pokojeRepo *repository.PokojeRepo
 }
 
-func NewUsterkiService(repo *repository.UsterkiRepo) *UsterkiService {
-	return &UsterkiService{repo: repo}
+func NewUsterkiService(repo *repository.UsterkiRepo, pokojeRepo *repository.PokojeRepo) *UsterkiService {
+	return &UsterkiService{repo: repo, pokojeRepo: pokojeRepo}
 }
 
 func (s *UsterkiService) CreateUsterka(u *models.Usterka) error {
 	u.Status = models.Przyjeto
-	u.Priorytet = nil
+	if u.Priorytet == nil {
+		return errors.New("priorytet zgłoszenia jest wymagany")
+	}
+	if !u.Priorytet.IsValid() {
+		return errors.New("nieprawidłowy priorytet zgłoszenia")
+	}
+	_, err := s.pokojeRepo.GetByID(u.PokojID)
+	if err != nil {
+		return errors.New("wskazany pokój nie istnieje")
+	}
 
 	return s.repo.Create(u)
 }
@@ -30,4 +40,8 @@ func (s *UsterkiService) UpdateStatus(id int, status models.StatusNaprawy) error
 
 func (s *UsterkiService) GetByPokojID(id int) ([]models.Usterka, error) {
 	return s.repo.GetByPokojID(id)
+}
+
+func (s *UsterkiService) GetAll() ([]models.Usterka, error) {
+	return s.repo.GetAll()
 }
