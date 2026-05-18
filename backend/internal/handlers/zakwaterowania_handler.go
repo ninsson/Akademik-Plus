@@ -3,7 +3,9 @@ package handlers
 import (
 	"akademik/internal/middleware"
 	"akademik/internal/services"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -30,7 +32,11 @@ func (h *ZakwaterowaniaHandler) GetMojeZakwaterowania(w http.ResponseWriter, r *
 
 	zakwaterowanie, err := h.svc.GetCurrentAccommodation(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Zakwaterowania not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Zakwaterowania service error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
