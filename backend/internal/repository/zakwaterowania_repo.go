@@ -24,7 +24,7 @@ func (r *ZakwaterowaniaRepo) GetCurrentByMieszkaniecID(mieszkaniecID int) (*mode
 			z.koniec_zakwaterowania,
 			p.numer_pokoju
 		FROM zakwaterowania z
-		JOIN pokoj p ON z.pokoj_id = p.id
+		JOIN pokoje p ON z.pokoj_id = p.id
 		WHERE z.mieszkaniec_id = $1
 		ORDER BY z.poczatek_zakwaterowania DESC
 		LIMIT 1
