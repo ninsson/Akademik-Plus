@@ -88,8 +88,16 @@ func main() {
 
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
-  
-  handlerWithCORS := middleware.CORS(mux)
+
+	zakwaterowaniaRepo := repository.NewZakwaterowaniaRepo(db)
+	zakwaterowaniaService := services.NewZakwaterowaniaService(zakwaterowaniaRepo)
+	zakwaterowaniaHandler := handlers.NewZakwaterowaniaHandler(zakwaterowaniaService)
+
+	mux.Handle("GET /zakwaterowania/moje", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(zakwaterowaniaHandler.GetMojeZakwaterowanie)),
+	))
+
+	handlerWithCORS := middleware.CORS(mux)
 
 	srv := &http.Server{
 		Addr:              ":8000",
