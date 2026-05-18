@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"akademik/internal/services"
 	"encoding/json"
 	"net/http"
@@ -15,20 +16,15 @@ func NewZakwaterowaniaHandler(svc *services.ZakwaterowaniaService) *Zakwaterowan
 }
 
 func (h *ZakwaterowaniaHandler) GetMojeZakwaterowania(w http.ResponseWriter, r *http.Request) {
-	userIDval := r.Context().Value("userID")
+	userIDval := r.Context().Value(middleware.UserIDKey)
 	if userIDval == nil {
 		http.Error(w, "brak autoryzacji", http.StatusUnauthorized)
 		return
 	}
 
-	var userID int
-	switch v := userIDval.(type) {
-	case float64:
-		userID = int(v)
-	case int:
-		userID = v
-	default:
-		http.Error(w, "invalid user id", http.StatusUnauthorized)
+	userID, ok := userIDval.(int)
+	if !ok {
+		http.Error(w, "invalid user id type in context", http.StatusInternalServerError)
 		return
 	}
 
