@@ -25,18 +25,7 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-
-	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), id)
-	if err != nil {
-		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	h.respondWithRachunki(w, r, id)
 }
 
 func (h *RachunkiHandler) GetMojeRachunki(w http.ResponseWriter, r *http.Request) {
@@ -57,16 +46,7 @@ func (h *RachunkiHandler) GetMojeRachunki(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), userID)
-	if err != nil {
-		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	h.respondWithRachunki(w, r, userID)
 }
 
 func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +67,20 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Rachunek oznaczony jako opłacony"}); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *RachunkiHandler) respondWithRachunki(w http.ResponseWriter, r *http.Request, userID int) {
+	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
