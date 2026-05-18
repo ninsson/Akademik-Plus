@@ -24,7 +24,7 @@ func main() {
 	dbname := os.Getenv("DB_NAME")
 	sslmode := os.Getenv("DB_SSLMODE")
 	if sslmode == "" {
-		sslmode = "require"
+		sslmode = "disable"
 	}
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
