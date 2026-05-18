@@ -27,5 +27,5 @@ type Zakwaterowanie struct {
 	PokojID                int       `db:"pokoj_id" json:"pokoj_id"`
 	PoczatekZakwaterowania time.Time `db:"poczatek_zakwaterowania" json:"poczatek_zakwaterowania"`
 	KoniecZakwaterowania   time.Time `db:"koniec_zakwaterowania" json:"koniec_zakwaterowania"`
-	NumerPokoju            string    `db:"numer_pokoju" json:"numer-pokoju,omitempty"`
+	NumerPokoju            string    `db:"numer_pokoju" json:"numer_pokoju,omitempty"`
 }
