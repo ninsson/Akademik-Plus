@@ -65,7 +65,7 @@ func (r *UsterkiRepo) UpdateStatus(id int, status models.StatusNaprawy) error {
 }
 
 func (r *UsterkiRepo) GetAll() ([]models.Usterka, error) {
-	var usterki []models.Usterka
+	usterki := []models.Usterka{}
 
 	query := ` 
 	SELECT
