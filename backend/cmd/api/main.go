@@ -81,6 +81,9 @@ func main() {
 	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
 	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
 	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
+  mux.Handle("GET /usterki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.GetAll)),
+	))
 
 	rachunkiRepo := repository.NewRachunkiRepo(db)
 	rachunkiService := services.NewRachunkiService(rachunkiRepo)

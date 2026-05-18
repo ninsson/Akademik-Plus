@@ -129,3 +129,16 @@ func (h *UsterkiHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Usterka status updated successfully"}`))
 }
+
+func (h *UsterkiHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	usterki, err := h.service.GetAll()
+	if err != nil {
+		http.Error(w, "Failed to fetch usterki", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(usterki); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}

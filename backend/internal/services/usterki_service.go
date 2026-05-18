@@ -41,3 +41,7 @@ func (s *UsterkiService) UpdateStatus(id int, status models.StatusNaprawy) error
 func (s *UsterkiService) GetByPokojID(id int) ([]models.Usterka, error) {
 	return s.repo.GetByPokojID(id)
 }
+
+func (s *UsterkiService) GetAll() ([]models.Usterka, error) {
+	return s.repo.GetAll()
+}
