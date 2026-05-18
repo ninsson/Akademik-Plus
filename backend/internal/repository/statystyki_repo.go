@@ -26,7 +26,7 @@ func (r *StatystykiRepo) GetDashboardStats() (*models.AdminStats, error) {
 		return nil, err
 	}
 
-	err = r.db.Get(&stats.WszystkiePokoje, `SELECT COUNT(*) FROM pokoj`)
+	err = r.db.Get(&stats.WszystkiePokoje, `SELECT COUNT(*) FROM pokoje`)
 	if err != nil {
 		return nil, err
 	}
