@@ -97,7 +97,7 @@ func main() {
 	zakwaterowaniaHandler := handlers.NewZakwaterowaniaHandler(zakwaterowaniaService)
 
 	mux.Handle("GET /zakwaterowania/moje", middleware.JWTMiddleware(
-		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(zakwaterowaniaHandler.GetMojeZakwaterowanie)),
+		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(zakwaterowaniaHandler.GetMojeZakwaterowania)),
 	))
 
 	handlerWithCORS := middleware.CORS(mux)
