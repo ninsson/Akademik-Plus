@@ -54,6 +54,8 @@ func main() {
 
 	fmt.Println("Successfully connected to database")
 
+	mux := http.NewServeMux()
+
 	authService := services.NewAuthService(repository.NewUzytkownicyRepo(db))
 	authHandler := handlers.NewAuthHandler(authService)
 
@@ -77,11 +79,10 @@ func main() {
 	usterkiService := services.NewUsterkiService(usterkiRepo, pokojeRepo)
 	usterkiHandler := handlers.NewUsterkiHandler(usterkiService)
 
-	mux := http.NewServeMux()
 	mux.Handle("GET /usterki/pokoj/{id}", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.GetByPokoj)))
 	mux.Handle("POST /usterki", middleware.JWTMiddleware(http.HandlerFunc(usterkiHandler.Create)))
 	mux.Handle("PATCH /usterki/{id}/status", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.UpdateStatus))))
-  mux.Handle("GET /usterki", middleware.JWTMiddleware(
+	mux.Handle("GET /usterki", middleware.JWTMiddleware(
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.GetAll)),
 	))
 
