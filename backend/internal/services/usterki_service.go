@@ -19,6 +19,9 @@ func (s *UsterkiService) CreateUsterka(u *models.Usterka) error {
 	if u.Priorytet == nil {
 		return errors.New("priorytet zgłoszenia jest wymagany")
 	}
+	if !u.Priorytet.IsValid() {
+		return errors.New("nieprawidłowy priorytet zgłoszenia")
+	}
 	if u.PokojID <= 0 {
 		return errors.New("nieprawidłowy identyfikator pokoju")
 	}
