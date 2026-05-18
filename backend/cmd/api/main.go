@@ -100,6 +100,14 @@ func main() {
 		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(zakwaterowaniaHandler.GetMojeZakwaterowania)),
 	))
 
+	statystykiRepo := repository.NewStatystykiRepo(db)
+	statystykiService := services.NewStatystykiService(statystykiRepo)
+	statystykiHandler := handlers.NewStatystykiHandler(statystykiService)
+
+	mux.Handle("GET /statystyki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(statystykiHandler.GetDashboardStats)),
+	))
+
 	handlerWithCORS := middleware.CORS(mux)
 
 	srv := &http.Server{
