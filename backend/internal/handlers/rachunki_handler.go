@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -39,10 +40,10 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *RachunkiHandler) GetMojeRachunki(w http.ResponseWriter, r *http.Request) {
-	userIDval := r.Context().Value("userID")
+	userIDval := r.Context().Value(middleware.UserIDKey)
 
 	if userIDval == nil {
-		http.Error(w, "No user ID found", http.StatusBadRequest)
+		http.Error(w, "no authorization", http.StatusUnauthorized)
 		return
 	}
 
