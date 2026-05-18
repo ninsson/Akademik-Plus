@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"akademik/internal/services"
 	"encoding/json"
 	"net/http"
-	"akademik/internal/services"
 )
 
 type ZakwaterowaniaHandler struct {
