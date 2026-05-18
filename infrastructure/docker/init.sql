@@ -95,7 +95,7 @@ VALUES
     ('Standard', 600.00),
     ('Podwyzszony', 850.00);
 
-INSERT INTO pokoj (numer_pokoju, ile_osob, czy_kuchnia, czy_toaleta, czy_dostosowany, pietro, status_pokoju, standard, akademik_id)
+INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, czy_toaleta, czy_dostosowany, pietro, status_pokoju, standard, akademik_id)
 VALUES
     ('101', 2, FALSE, TRUE, FALSE, 1, 'Dostepny', 'Standard', 1),
     ('202', 1, TRUE, TRUE, TRUE, 2, 'Dostepny', 'Podwyzszony', 1);
