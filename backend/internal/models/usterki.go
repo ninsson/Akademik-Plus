@@ -4,6 +4,15 @@ import "time"
 
 type PriorytetUsterki string
 
+func (u PriorytetUsterki) IsValid() bool {
+	switch u {
+	case "BardzoPilne", "Pilne", "Normalny", "MozePoczekac":
+		return true
+	default:
+		return false
+	}
+}
+
 const (
 	BardzoPilne  PriorytetUsterki = "Bardzo_pilne"
 	Pilne        PriorytetUsterki = "Pilne"

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -24,18 +25,28 @@ func (h *RachunkiHandler) GetByUzytkownikID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
+	h.respondWithRachunki(w, r, id)
+}
 
-	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), id)
-	if err != nil {
-		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
+func (h *RachunkiHandler) GetMojeRachunki(w http.ResponseWriter, r *http.Request) {
+	userIDval := r.Context().Value(middleware.UserIDKey)
+
+	if userIDval == nil {
+		http.Error(w, "no authorization", http.StatusUnauthorized)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	var userID int
+	switch v := userIDval.(type) {
+	case float64:
+		userID = int(v)
+	case int:
+		userID = v
+	default:
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
+	h.respondWithRachunki(w, r, userID)
 }
 
 func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +67,20 @@ func (h *RachunkiHandler) MarkAsPaid(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Rachunek oznaczony jako opłacony"}); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *RachunkiHandler) respondWithRachunki(w http.ResponseWriter, r *http.Request, userID int) {
+	rachunki, err := h.svc.GetByUzytkownikID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch rachunki", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(rachunki); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
