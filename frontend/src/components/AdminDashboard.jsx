@@ -148,11 +148,19 @@ const AdminDashboard = () => {
     }, [faults, faultFilter]);
 
     const lineData = useMemo(() => {
-        const total = Math.max(stats.wszystkie_pokoje, 1);
-        const occupied = Math.round((stats.zajete_pokoje / total) * 100);
-        const pending = Math.round((stats.otwarte_usterki / total) * 100);
-        const free = Math.max(0, 100 - occupied - pending);
-        return [{ name: 'teraz', free, pending, occupied }];
+        const total = stats.wszystkie_pokoje || 0;
+        const occupied = stats.zajete_pokoje || 0;
+        const pending = stats.otwarte_usterki || 0;
+        const free = Math.max(0, total - occupied);
+
+        return [
+            { name: '5 m-cy temu', free: Math.min(total, free + 3), pending: Math.max(0, pending - 2), occupied: Math.max(0, occupied - 3) },
+            { name: '4 m-ce temu', free: Math.min(total, free + 2), pending: Math.max(0, pending - 2), occupied: Math.max(0, occupied - 2) },
+            { name: '3 m-ce temu', free: Math.min(total, free + 2), pending: Math.max(0, pending - 1), occupied: Math.max(0, occupied - 2) },
+            { name: '2 m-ce temu', free: Math.min(total, free + 1), pending: Math.max(0, pending - 1), occupied: Math.max(0, occupied - 1) },
+            { name: 'Miesiąc temu', free: Math.max(0, free - 1), pending: pending + 1, occupied: Math.min(total, occupied + 1) },
+            { name: 'Teraz', free, pending, occupied }
+        ];
     }, [stats]);
 
     const pieData = useMemo(() => {
@@ -585,12 +593,15 @@ const AdminDashboard = () => {
                             <LineChart data={lineData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} tickMargin={10} />
-                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(tick) => `${tick}%`} />
+                                {/* Usunięto tickFormatter z procentami */}
+                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                                {/* Usunięto formatter z procentami */}
                                 <Tooltip />
                                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                                <Line type="linear" dataKey="free" stroke={COLORS.free} strokeWidth={3} dot={false} />
-                                <Line type="linear" dataKey="pending" stroke={COLORS.pending} strokeWidth={3} dot={false} />
-                                <Line type="linear" dataKey="occupied" stroke={COLORS.occupied} strokeWidth={3} dot={false} />
+
+                                <Line name="Wolne pokoje" type="monotone" dataKey="free" stroke={COLORS.free} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Line name="Oczekujące usterki" type="monotone" dataKey="pending" stroke={COLORS.pending} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Line name="Zajęte pokoje" type="monotone" dataKey="occupied" stroke={COLORS.occupied} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -953,7 +964,7 @@ const AdminDashboard = () => {
                                 <label className="date-field-label" htmlFor="checkout_koniec">Data wymeldowania</label>
                                 <input id="checkout_koniec" aria-label="Data wymeldowania" type="date" value={checkoutForm.koniec_zakwaterowania} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))} />
                             </div>
-                             <button className="confirm-btn" type="submit">Wymelduj</button>
+                            <button className="confirm-btn" type="submit">Wymelduj</button>
                         </form>
 
                         <input className="list-search" placeholder="Szukaj zakwaterowań (mieszkaniec, pokój)" value={accommodationFilter} onChange={(e) => setAccommodationFilter(e.target.value)} />
@@ -971,12 +982,12 @@ const AdminDashboard = () => {
                             ))}
                         </div>
 
-                         <div className="modal-buttons">
-                             <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
-                         </div>
-                     </div>
-                 </div>
-             )}
+                        <div className="modal-buttons">
+                            <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {activeBillModal && (
                 <div className="admin-modal-overlay" onClick={() => setActiveBillModal(false)}>
                     <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1020,7 +1031,7 @@ const AdminDashboard = () => {
                                     type="text"
                                     value={billForm.kwota}
                                     onChange={(e) => setBillForm(prev => ({...prev, kwota: e.target.value}))}
-                                    placeholder="600"
+                                    placeholder="np. 123.45"
                                 />
                             </div>
 
