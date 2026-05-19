@@ -17,9 +17,8 @@ Spis treści
 - Funkcje
 - Architektura
 - Szybki start
-- Uruchamianie w trybie developerskim
-- Uruchamianie przez Docker
-- Kontrybucja i kontakt
+- Wprowadzanie zmian do projektu
+- Kontakt
 - Licencja
 
 Funkcje
