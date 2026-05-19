@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"akademik/internal/middleware"
 	"akademik/internal/models"
@@ -54,7 +55,12 @@ func (h *KomentarzeHandler) AddKomentarz(w http.ResponseWriter, r *http.Request)
 		Tresc string `json:"tresc"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil || input.Tresc == "" {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	input.Tresc = strings.TrimSpace(input.Tresc)
+	if input.Tresc == "" {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
