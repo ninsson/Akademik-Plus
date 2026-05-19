@@ -43,7 +43,7 @@ Zobacz szczegółową instrukcję instalacji i uruchomienia w `INSTALL.md` w kat
 - `INSTALL.md` — krok po kroku: wymagania, konfiguracja `.env`, uruchomienie bazy, backendu i frontendu oraz sposób
   uruchomienia za pomocą Docker Compose.
 
-Wprowadzanie zmian dop rojektu
+Wprowadzanie zmian do projektu
 
 - Zgłaszaj pull requesty i issue w repozytorium.
 - Przed wysłaniem PR upewnij się, że zmiany są przetestowane lokalnie.
