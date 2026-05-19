@@ -36,6 +36,7 @@ func (r *KomentarzeRepo) GetByUsterkaID(usterkaID int) ([]models.KomentarzUsterk
 		SELECT
 			k.id, k.usterka_id, k.autor_id, k.tresc, k.data_dodania,
 			CONCAT(u.imie, ' ', u.nazwisko) AS autor_nazwa,
+			u.rola AS autor_rola
 		FROM komentarze_usterki k
 		JOIN uzytkownicy u ON k.autor_id = u.id
 		WHERE k.usterka_id = $1
