@@ -220,7 +220,7 @@ const PaymentHistory = () => {
                                 Anuluj
                             </button>
                             <button className="confirm-btn" onClick={handleConfirmPayment} disabled={isProcessing}>
-                                {isProcessing ? 'Przetwarzanie...' : 'Zapłać 700 zł'}
+                                {isProcessing ? 'Przetwarzanie...' : 'Zapłać'}
                             </button>
                         </div>
                     </div>
