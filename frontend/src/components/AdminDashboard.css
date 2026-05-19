@@ -1,12 +1,16 @@
 /* --- GŁÓWNY LAYOUT --- */
 .admin-wrapper {
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     background-color: #cbd4db;
     padding: 0 10px 10px 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     box-sizing: border-box;
     margin: -8px;
 }
+
 .admin-header {
     margin-bottom: 5px;
 }
@@ -28,8 +32,11 @@
 /* --- SIATKA (GRID) --- */
 .admin-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr; /* Pierwsza kolumna nieco szersza, by wykres liniowy miał oddech */
+    grid-template-columns: 1.3fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 10px;
+    flex-grow: 1;
+    min-height: 0;
 }
 
 /* --- KARTY --- */
@@ -40,6 +47,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .card-title {
@@ -51,20 +59,21 @@
 }
 
 /* --- RECHARTS WRAPPER --- */
-/* Wymuszamy określoną wysokość na kontenerze, bo ResponsiveContainer Recharts musi znać rozmiar rodzica */
 .recharts-container {
     width: 100%;
-    height: 195px;
+    flex-grow: 1;
+    min-height: 0;
 }
 
-/* Specjalny layout dla lewego dolnego rogu (Wykres słupkowy) */
 .bar-layout-wrapper {
     display: flex;
     height: 100%;
-    align-items: center;
+    align-items: stretch;
 }
 
 .left-title {
+    display: flex;
+    align-items: center;
     text-align: left;
     margin-right: 20px;
     margin-bottom: 0;
@@ -77,9 +86,10 @@
     flex-direction: column;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    margin-bottom: 15px;
-    max-height: 195px;
+    margin-bottom: 5px;
+    flex-grow: 1;
     overflow-y: auto;
+    max-height: none;
 }
 
 .fault-item {
@@ -158,7 +168,20 @@
 
 /* RESPANSYWNOŚĆ */
 @media (max-width: 1100px) {
-    .admin-grid { grid-template-columns: 1fr; }
+    .admin-wrapper {
+        height: auto;
+        overflow: visible;
+    }
+    .admin-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+    .recharts-container {
+        min-height: 250px;
+    }
+    .faults-list {
+        max-height: 250px;
+    }
     .bar-layout-wrapper { flex-direction: column; align-items: flex-start; }
     .left-title { margin-bottom: 20px; text-align: center; width: 100%; }
 }
@@ -433,17 +456,15 @@
     border: 1px solid #86efac;
 }
 
-/* Resident search input: hide native dropdown/arrow/clear to avoid confusing icon next to datalist */
 .resident-input {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
     background-repeat: no-repeat;
     background-position: right 8px center;
-    padding-right: 10px; /* avoid overlap with native icons when present */
+    padding-right: 10px;
 }
 
-/* WebKit: remove search/cancel buttons and spinner */
 .resident-input::-webkit-search-decoration,
 .resident-input::-webkit-search-cancel-button,
 .resident-input::-webkit-search-results-button,
@@ -455,18 +476,15 @@
     margin: 0;
 }
 
-/* IE/Edge */
 .resident-input::-ms-clear,
 .resident-input::-ms-expand {
     display: none;
 }
 
-/* Firefox - disable inner focus outline if any unusual appearance */
 .resident-input:-moz-focusring {
     outline: none;
 }
 
-/* Date field label + layout for the accommodation form */
 .date-field {
     display: flex;
     flex-direction: column;
@@ -478,7 +496,6 @@
     margin-bottom: 6px;
 }
 
-/* Small search input used to filter long lists inside modals */
 .list-search {
     width: 100%;
     padding: 8px;
@@ -487,11 +504,70 @@
     margin: 8px 0;
     font-size: 0.95rem;
     color: #0f172a;
+    box-sizing: border-box;
 }
 
-/* Visual helper showing the currently selected resident under the datalist */
 .selected-resident {
     font-size: 0.9rem;
     color: #1b0a5a;
     margin: 6px 0 4px 0;
+}
+
+/* --- Formularz dodawania rachunku --- */
+.bill-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+    margin-bottom: 24px;
+}
+
+.bill-form-grid .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.bill-form-grid .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.bill-form-grid .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1b0a5a;
+    margin-bottom: 0;
+}
+
+.bill-form-grid input,
+.bill-form-grid select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1b0a5a;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    margin-top: 0;
+}
+
+.bill-form-grid input:focus,
+.bill-form-grid select:focus {
+    outline: none;
+    border-color: #1b0a5a;
+}
+
+.bill-form-grid select:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .bill-form-grid {
+        grid-template-columns: 1fr;
+    }
 }

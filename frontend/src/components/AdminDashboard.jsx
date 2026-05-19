@@ -1102,7 +1102,7 @@ const AdminDashboard = () => {
                                     type="text"
                                     value={billForm.kwota}
                                     onChange={(e) => setBillForm(prev => ({...prev, kwota: e.target.value}))}
-                                    placeholder="np. 123.45"
+                                    placeholder="600"
                                 />
                             </div>
 
