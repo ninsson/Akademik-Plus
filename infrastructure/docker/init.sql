@@ -86,7 +86,7 @@ CREATE TABLE komentarze_usterki (
     usterka_id INT NOT NULL REFERENCES usterki(id) ON DELETE CASCADE,
     autor_id INT NOT NULL REFERENCES uzytkownicy(id),
     tresc TEXT NOT NULL,
-    data_dodania TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_dodania TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Test password: "Haslo123"
