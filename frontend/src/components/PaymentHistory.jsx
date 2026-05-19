@@ -145,7 +145,10 @@ const PaymentHistory = () => {
 
     return (
         <div className="payment-page-wrapper">
-            <AppHeader role={isAdmin ? 'Administrator' : 'Mieszkaniec'} greeting={isAdmin ? 'Panel rozliczeń administratora' : undefined} />
+            <AppHeader
+                role={isAdmin ? 'Administrator' : 'Mieszkaniec'}
+                greeting={isAdmin ? 'Panel rozliczeń administratora' : 'Panel płatności mieszkańca'}
+            />
 
             {error && <div className="error-message" role="alert">{error}</div>}
             {loading && <div className="loading-message">Ładowanie rachunków z API...</div>}

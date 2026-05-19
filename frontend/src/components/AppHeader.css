@@ -1,9 +1,9 @@
 .app-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .app-header-brand {
@@ -42,6 +42,11 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+    background-color: #f1f5f9;
 }
 
 .secondary-btn.active {
@@ -57,5 +62,6 @@
 
     .app-header-actions {
         justify-content: flex-start;
+        margin-top: 6px;
     }
 }

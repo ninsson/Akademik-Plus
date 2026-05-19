@@ -27,8 +27,8 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    max-width: 2200px; /* Ograniczamy szerokość, żeby nie rozciągało się w nieskończoność na wielkich monitorach */
-    margin: 0 auto; /* Centruje kartę na środku ekranu */
+    max-width: 2200px; 
+    margin: 0 auto;
 }
 
 .payment-card-title {
