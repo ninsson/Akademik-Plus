@@ -30,7 +30,7 @@ func (r *KomentarzeRepo) Create(k *models.KomentarzUsterki) error {
 	return err
 }
 
-func (r *KomentarzeRepo) GetByUsterkaID(usterkaID string) ([]models.KomentarzUsterki, error) {
+func (r *KomentarzeRepo) GetByUsterkaID(usterkaID int) ([]models.KomentarzUsterki, error) {
 	var komentarze []models.KomentarzUsterki
 	query := `
 		SELECT
