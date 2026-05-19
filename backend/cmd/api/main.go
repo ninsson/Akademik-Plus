@@ -109,6 +109,13 @@ func main() {
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(statystykiHandler.GetDashboardStats)),
 	))
 
+	komentarzeRepo := repository.NewKomentarzeRepo(db)
+	komentarzeService := services.NewKomentarzeService(komentarzeRepo)
+	komentarzeHandler := handlers.NewKomentarzeHandler(komentarzeService)
+
+	mux.Handle("GET /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.GetKomentarze)))
+	mux.Handle("POST /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.AddKomentarz)))
+
 	handlerWithCORS := middleware.CORS(mux)
 
 	srv := &http.Server{

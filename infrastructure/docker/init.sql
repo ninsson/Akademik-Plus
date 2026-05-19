@@ -81,6 +81,14 @@ CREATE TABLE rachunki
     dodatkowe_uwagi TEXT
 );
 
+CREATE TABLE komentarze_usterki (
+    id SERIAL PRIMARY KEY,
+    usterka_id INT NOT NULL REFERENCES usterki(id) ON DELETE CASCADE,
+    autor_id INT NOT NULL REFERENCES uzytkownicy(id),
+    tresc TEXT NOT NULL,
+    data_dodania TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Test password: "Haslo123"
 INSERT INTO uzytkownicy (imie, nazwisko, email, numer_telefonu, username, password_hash, rola, czy_wymaga_dostosowan)
 VALUES
