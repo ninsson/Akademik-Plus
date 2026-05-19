@@ -44,7 +44,7 @@ docker compose ps
 docker compose logs -f api
 ```
 
-W celu sprawdzeniu frontendu należy wejść na stronę: http://localhost:5173
+W celu sprawdzenia frontendu należy wejść na stronę: http://localhost:5173
 
 Backend można natomiast sprawdzić w następujący sposób:
 
