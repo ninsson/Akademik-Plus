@@ -537,8 +537,8 @@ const AdminDashboard = () => {
         pdf.text(`Okres raportu: ${startDate} do ${endDate}`, 20, 45);
         pdf.text(`Wygenerowano przez: ${removePolishChars(adminName)}`, 20, 52);
         pdf.text(`Wszystkie pokoje: ${stats.wszystkie_pokoje}`, 20, 65);
-        pdf.text(`Zajęte pokoje: ${stats.zajete_pokoje}`, 20, 72);
-        pdf.text(`Nieopłacone rachunki: ${stats.nieoplacone_rachunki}`, 20, 79);
+        pdf.text(`Zajete pokoje: ${stats.zajete_pokoje}`, 20, 72);
+        pdf.text(`Nieoplacone rachunki: ${stats.nieoplacone_rachunki}`, 20, 79);
         pdf.text(`Otwarte usterki: ${stats.otwarte_usterki}`, 20, 86);
         pdf.save(`Raport_${startDate}_${endDate}.pdf`);
     };
