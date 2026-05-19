@@ -367,7 +367,6 @@ const Dashboard = () => {
 
                             <textarea
                                 placeholder="Opisz usterkę"
-                                rows="7"
                                 value={faultForm.opis_usterki}
                                 onChange={(e) => setFaultForm({ ...faultForm, opis_usterki: e.target.value })}
                             ></textarea>
