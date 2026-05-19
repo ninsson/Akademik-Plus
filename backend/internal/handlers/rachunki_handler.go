@@ -6,8 +6,11 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"akademik/internal/services"
+
+	"github.com/shopspring/decimal"
 )
 
 type RachunkiHandler struct {
@@ -116,4 +119,53 @@ func (h *RachunkiHandler) resolvePaidStatus(r *http.Request, fromBody *bool) (bo
 		return false, nil
 	}
 	return false, errors.New("nieprawidlowa wartosc czy_oplacone")
+}
+
+func (h *RachunkiHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		ZakwaterowanieID   int    `json:"zakwaterowanie_id"`
+		Kwota              string `json:"kwota"`                      // wysyłamy jako string np. "123.45"
+		DataWystawienia    string `json:"data_wystawienia,omitempty"` // YYYY-MM-DD
+		TerminDoZaplacenia string `json:"termin_do_zaplacenia"`       // YYYY-MM-DD
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidłowy format JSON")
+		return
+	}
+
+	if payload.ZakwaterowanieID == 0 || payload.Kwota == "" || payload.TerminDoZaplacenia == "" {
+		writeError(w, http.StatusBadRequest, "brakuje wymaganych pól")
+		return
+	}
+
+	kwotaDec, err := decimal.NewFromString(payload.Kwota)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidłowa kwota")
+		return
+	}
+
+	dataW := time.Now()
+	if payload.DataWystawienia != "" {
+		t, err := time.Parse("2006-01-02", payload.DataWystawienia)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "nieprawidłowa data_wystawienia")
+			return
+		}
+		dataW = t
+	}
+
+	termin, err := time.Parse("2006-01-02", payload.TerminDoZaplacenia)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidłowa termin_do_zaplacenia")
+		return
+	}
+
+	numer, err := h.svc.Create(r.Context(), payload.ZakwaterowanieID, kwotaDec, dataW, termin)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "nie udało się utworzyć rachunku")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]string{"numer_rachunku": numer})
 }

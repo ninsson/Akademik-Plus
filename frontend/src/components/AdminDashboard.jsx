@@ -106,7 +106,14 @@ const AdminDashboard = () => {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
+    const [activeBillModal, setActiveBillModal] = useState(false);
+    const [billForm, setBillForm] = useState({
+        mieszkaniec_id: '',
+        zakwaterowanie_id: '',
+        kwota: '',
+        termin_do_zaplacenia: '',
+        data_wystawienia: '',
+    });
     const totalDebt = stats.nieoplacone_rachunki;
     const residentUsers = useMemo(() => users.filter((user) => user.rola === 'Mieszkaniec'), [users]);
     const filteredUsers = useMemo(() => {
@@ -647,6 +654,9 @@ const AdminDashboard = () => {
                         <button className="primary-btn" onClick={() => openQuickActionModal('accommodations')}>Zarządzaj zakwaterowaniami</button>
                         <button className="primary-btn" onClick={() => openQuickActionModal('users')}>Zarządzaj użytkownikami</button>
                         <button className="primary-btn" onClick={() => openQuickActionModal('rooms')}>Zarządzaj pokojami</button>
+                        <button className="primary-btn mt-2" onClick={async () => { await loadAccommodations(); await loadUsers(); setActiveBillModal(true); }}>
+                            Dodaj rachunek
+                        </button>
                     </div>
                 </div>
 
@@ -967,6 +977,114 @@ const AdminDashboard = () => {
                      </div>
                  </div>
              )}
+            {activeBillModal && (
+                <div className="admin-modal-overlay" onClick={() => setActiveBillModal(false)}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Dodaj rachunek</h2>
+
+                        <div className="bill-form-grid">
+                            <div className="form-group">
+                                <label>Mieszkaniec</label>
+                                <select
+                                    value={billForm.mieszkaniec_id}
+                                    onChange={(e) => setBillForm(prev => ({...prev, mieszkaniec_id: e.target.value, zakwaterowanie_id: ''}))}
+                                >
+                                    <option value="">Wybierz mieszkańca</option>
+                                    {users.filter(u => u.rola === 'Mieszkaniec').map(u => (
+                                        <option key={u.id} value={u.id}>{u.imie} {u.nazwisko} ({u.email})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Zakwaterowanie</label>
+                                <select
+                                    value={billForm.zakwaterowanie_id}
+                                    onChange={(e) => setBillForm(prev => ({...prev, zakwaterowanie_id: e.target.value}))}
+                                    disabled={!billForm.mieszkaniec_id}
+                                >
+                                    <option value="">Wybierz zakwaterowanie</option>
+                                    {accommodations
+                                        .filter(a => String(a.mieszkaniec_id) === String(billForm.mieszkaniec_id))
+                                        .map(a => (
+                                            <option key={a.id} value={a.id}>
+                                                #{a.id} • Pokój {a.numer_pokoju || a.pokoj_id} ({formatDate(a.poczatek_zakwaterowania)} - {formatDate(a.koniec_zakwaterowania)})
+                                            </option>
+                                        ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Kwota (zł)</label>
+                                <input
+                                    type="text"
+                                    value={billForm.kwota}
+                                    onChange={(e) => setBillForm(prev => ({...prev, kwota: e.target.value}))}
+                                    placeholder="600"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Termin do zapłacenia</label>
+                                <input
+                                    type="date"
+                                    value={billForm.termin_do_zaplacenia}
+                                    onChange={(e) => setBillForm(prev => ({...prev, termin_do_zaplacenia: e.target.value}))}
+                                />
+                            </div>
+
+                            <div className="form-group full-width">
+                                <label>Data wystawienia (opcjonalnie)</label>
+                                <input
+                                    type="date"
+                                    value={billForm.data_wystawienia}
+                                    onChange={(e) => setBillForm(prev => ({...prev, data_wystawienia: e.target.value}))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="modal-buttons">
+                            <button className="cancel-btn" onClick={() => setActiveBillModal(false)}>Anuluj</button>
+                            <button
+                                className="confirm-btn"
+                                onClick={async () => {
+                                    if (!billForm.zakwaterowanie_id || !billForm.kwota || !billForm.termin_do_zaplacenia) {
+                                        alert('Wypełnij wszystkie wymagane pola');
+                                        return;
+                                    }
+                                    try {
+                                        const res = await apiFetch('/rachunki', {
+                                            method: 'POST',
+                                            headers: {'Content-Type': 'application/json'},
+                                            body: JSON.stringify({
+                                                zakwaterowanie_id: Number(billForm.zakwaterowanie_id),
+                                                kwota: String(billForm.kwota),
+                                                termin_do_zaplacenia: billForm.termin_do_zaplacenia,
+                                                data_wystawienia: billForm.data_wystawienia || undefined,
+                                            }),
+                                        });
+                                        if (!res.ok) {
+                                            const body = await readJsonOrText(res);
+                                            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się dodać rachunku.');
+                                            return;
+                                        }
+                                        const data = await readJsonOrText(res);
+                                        setSuccessMessage(`Rachunek dodany: ${data?.numer_rachunku || ''}`);
+                                        setActiveBillModal(false);
+                                        setBillForm({mieszkaniec_id:'', zakwaterowanie_id:'', kwota:'', termin_do_zaplacenia:'', data_wystawienia:''});
+                                        await refreshStats();
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('Błąd sieciowy');
+                                    }
+                                }}
+                            >
+                                Dodaj rachunek
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

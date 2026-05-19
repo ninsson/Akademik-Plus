@@ -113,6 +113,9 @@ func main() {
 	mux.Handle("GET /rachunki", middleware.JWTMiddleware(
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetAll)),
 	))
+	mux.Handle("POST /rachunki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.Create)),
+	))
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
 
