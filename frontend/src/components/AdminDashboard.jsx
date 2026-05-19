@@ -32,7 +32,9 @@ const normalizeStats = (raw) => ({
 });
 
 const faultDescription = (fault) => {
-    const room = fault?.pokoj_id ? `Pokój ${fault.pokoj_id}` : 'Pokój nieznany';
+    const room = fault?.pokoj_numer
+        ? `Pokój ${fault.pokoj_numer}`
+        : (fault?.pokoj_id ? `Pokój ${fault.pokoj_id}` : 'Pokój nieznany');
     const desc = fault?.opis_usterki || 'Brak opisu';
     const status = fault?.status || 'Brak statusu';
     return `${room} - ${desc} (${status})`;
@@ -133,7 +135,9 @@ const AdminDashboard = () => {
     const filteredFaults = useMemo(() => {
         const q = faultFilter.trim().toLowerCase();
         if (!q) return faults;
-        return faults.filter((f) => (`${f.opis_usterki || ''} ${f.pokoj_id || ''} ${f.status || ''}`.toLowerCase().includes(q)));
+        return faults.filter((f) => (
+            `${f.opis_usterki || ''} ${f.pokoj_numer || f.pokoj_id || ''} ${f.status || ''}`.toLowerCase().includes(q)
+        ));
     }, [faults, faultFilter]);
 
     const lineData = useMemo(() => {
@@ -180,9 +184,11 @@ const AdminDashboard = () => {
     };
 
     const loadMainData = async () => {
-        const [statsRes, faultsRes] = await Promise.all([
+        // pobieramy statystyki, usterki i pokoje równolegle
+        const [statsRes, faultsRes, roomsRes] = await Promise.all([
             apiFetch('/statystyki'),
             apiFetch('/usterki'),
+            apiFetch('/pokoje'),
         ]);
 
         if (!statsRes.ok) {
@@ -192,9 +198,36 @@ const AdminDashboard = () => {
         const statsData = await readJsonOrText(statsRes);
         setStats(normalizeStats(statsData));
 
+        // ustaw rooms jeśli udało się pobrać
+        let roomsList = [];
+        if (roomsRes && roomsRes.ok) {
+            try {
+                const roomsData = await readJsonOrText(roomsRes);
+                roomsList = Array.isArray(roomsData) ? roomsData : roomsData?.items || [];
+                setRooms(roomsList);
+            } catch (err) {
+                console.warn('Nie udało się sparsować listy pokoi:', err);
+                setRooms([]);
+            }
+        } else {
+            setRooms((prev) => prev || []);
+        }
+
         if (faultsRes.ok) {
             const faultsData = await readJsonOrText(faultsRes);
-            setFaults(Array.isArray(faultsData) ? faultsData : faultsData?.items || []);
+            const rawFaults = Array.isArray(faultsData) ? faultsData : faultsData?.items || [];
+
+            const roomMap = {};
+            roomsList.forEach((r) => {
+                const num = String(r?.numer_pokoju ?? r?.numer ?? r?.number ?? '').trim();
+                if (r?.id != null) roomMap[r.id] = num || String(r.id);
+            });
+
+            const enriched = rawFaults.map((f) => ({
+                ...f,
+                pokoj_numer: roomMap[f.pokoj_id] !== undefined ? roomMap[f.pokoj_id] : (f.pokoj_numer ?? String(f.pokoj_id ?? '')),
+            }));
+            setFaults(enriched);
         } else if (faultsRes.status === 404) {
             setFaults([]);
         } else {
@@ -618,7 +651,7 @@ const AdminDashboard = () => {
                 <div className="admin-modal-overlay" onClick={() => setSelectedFault(null)}>
                     <div className="admin-modal-content fault-modal-content" onClick={(e) => e.stopPropagation()}>
                         <h2>Usterka #{selectedFault.id}</h2>
-                        <p><strong>Pokój:</strong> {selectedFault.pokoj_id}</p>
+                        <p><strong>Pokój:</strong> {selectedFault.pokoj_numer ?? selectedFault.pokoj_id}</p>
                         <p><strong>Opis:</strong> {selectedFault.opis_usterki}</p>
                         <p><strong>Priorytet:</strong> {selectedFault.priorytet || '-'}</p>
                         <p><strong>Data zgłoszenia:</strong> {formatDateTime(selectedFault.data_zgloszenia)}</p>

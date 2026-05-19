@@ -28,7 +28,7 @@ const Dashboard = () => {
     const [accommodation, setAccommodation] = useState(null);
     const [accommodationMessage, setAccommodationMessage] = useState('');
     const [faults, setFaults] = useState([]);
-    const [faultForm, setFaultForm] = useState({ pokoj_id: '', priorytet: '', opis_usterki: '' });
+    const [faultForm, setFaultForm] = useState({ pokoj_numer: '', priorytet: '', opis_usterki: '' });
     const [activeFaultTab, setActiveFaultTab] = useState('new');
     const [selectedFault, setSelectedFault] = useState(null);
     const [faultComments, setFaultComments] = useState([]);
@@ -120,7 +120,7 @@ const Dashboard = () => {
                         setUserData({ name: item.mieszkaniec_nazwa || 'Mieszkańcu' });
                         setFaultForm((prev) => ({
                             ...prev,
-                            pokoj_id: String(item.pokoj_id || ''),
+                            pokoj_numer: String(item.numer_pokoju || ''),
                         }));
                     }
                 } else if (residenceRes.status === 404) {
@@ -149,16 +149,53 @@ const Dashboard = () => {
 
     const handleFaultSubmit = async (e) => {
         e.preventDefault();
-        if (!faultForm.pokoj_id || !faultForm.priorytet || !faultForm.opis_usterki.trim()) {
+        const pokojInput = (faultForm.pokoj_numer || '').trim();
+        if (!pokojInput || !faultForm.priorytet || !faultForm.opis_usterki.trim()) {
             alert('Uzupełnij wszystkie pola zgłoszenia.');
             return;
         }
+
         try {
+            const pokojeRes = await apiFetch('/pokoje');
+            if (!pokojeRes.ok) {
+                const body = await readJsonOrText(pokojeRes);
+                alert(typeof body === 'string' ? body : 'Nie udało się pobrać listy pokoi');
+                return;
+            }
+            const pokojeData = await readJsonOrText(pokojeRes);
+            const pokoje = Array.isArray(pokojeData) ? pokojeData : pokojeData?.items || pokojeData?.pokoje || [];
+
+            const getRoomNumber = (p) => {
+                return String((p?.numer_pokoju ?? p?.numer ?? p?.number) ?? '').trim();
+            };
+
+            const inputIsNumber = pokojInput !== '' && !Number.isNaN(Number(pokojInput));
+
+            let pokoj = pokoje.find(p => {
+                const numer = getRoomNumber(p);
+                if (inputIsNumber && numer !== '') {
+                    const numerNum = Number(numer);
+                    if (!Number.isNaN(numerNum)) {
+                        return numerNum === Number(pokojInput);
+                    }
+                }
+                return numer.toLowerCase() === pokojInput.toLowerCase();
+            });
+
+            if (!pokoj && inputIsNumber) {
+                pokoj = pokoje.find(p => String(p?.id ?? '') === String(pokojInput));
+            }
+
+            if (!pokoj) {
+                alert(`Nie znaleziono pokoju o numerze/ID "${pokojInput}". Sprawdź wpis i spróbuj ponownie.`);
+                return;
+            }
+
             const response = await apiFetch('/usterki', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    pokoj_id: Number(faultForm.pokoj_id),
+                    pokoj_id: Number(pokoj.id),
                     priorytet: faultForm.priorytet,
                     opis_usterki: faultForm.opis_usterki.trim(),
                 }),
@@ -180,6 +217,7 @@ const Dashboard = () => {
             alert(err.message || 'Nie udało się zgłosić usterki');
         }
     };
+
 
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
@@ -309,11 +347,11 @@ const Dashboard = () => {
                     {activeFaultTab === 'new' ? (
                         <form className="fault-form" onSubmit={handleFaultSubmit}>
                             <input
-                                type="number"
-                                placeholder="ID pokoju"
-                                value={faultForm.pokoj_id}
-                                onChange={(e) => setFaultForm({ ...faultForm, pokoj_id: e.target.value })}
-                                disabled={!accommodation?.pokoj_id}
+                                type="text"
+                                placeholder="Numer pokoju (np. 101)"
+                                value={faultForm.pokoj_numer}
+                                onChange={(e) => setFaultForm({ ...faultForm, pokoj_numer: e.target.value })}
+                                disabled={!!accommodation && !accommodation.numer_pokoju ? true : false}
                             />
 
                             <select
