@@ -14,14 +14,14 @@
    zbuduje aplikację.
    Otwórz folder projektu w terminalu.
 
-```powershell
+```bash
 cd infrastructure/docker
 docker compose up -d --build
 ```
 
 W przypadku potrzeby ręcznego zbudowania obrazów można to zrobić z pomocą komend:
 
-```powershell
+```bash
 # Budowanie backendu
 cd ../../ # Przejście do folderu projektu
 cd backend
@@ -39,7 +39,7 @@ zbudują bazy danych. Należy wprowadzić do pliku `.env` dane serwera baz danyc
 
 Poniższymi komendami można sprawdzić logi aplikacji:
 
-```powershell
+```bash
 docker compose ps
 docker compose logs -f api
 ```
@@ -48,7 +48,7 @@ W celu sprawdzenia frontendu należy wejść na stronę: http://localhost:5173
 
 Backend można natomiast sprawdzić w następujący sposób:
 
-```powershell
+```bash
 curl -I http://localhost:8000
 ```
 
