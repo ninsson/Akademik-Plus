@@ -31,7 +31,10 @@ func (h *KomentarzeHandler) GetKomentarze(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(komentarze)
+	if err := json.NewEncoder(w).Encode(komentarze); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *KomentarzeHandler) AddKomentarz(w http.ResponseWriter, r *http.Request) {
