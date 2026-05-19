@@ -15,7 +15,7 @@
    Otwórz folder projektu w terminalu.
 
 ```powershell
-cd /infrastructure/docker
+cd infrastructure/docker
 docker compose up -d --build
 ```
 
