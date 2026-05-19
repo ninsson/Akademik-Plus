@@ -67,5 +67,8 @@ func (h *KomentarzeHandler) AddKomentarz(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(komentarz)
+	if err := json.NewEncoder(w).Encode(komentarz); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
