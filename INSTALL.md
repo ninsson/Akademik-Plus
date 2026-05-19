@@ -5,7 +5,7 @@
 - Docker & Docker Compose (opcjonalnie) — do automatycznego uruchomienia całego projektu.
 
 2. Przygotowanie — plik `.env`
-   Skopiuj plik `.env.example` do folderu `infrastructure/docker/` (lub ustaw zmienne środowiskowe). Następnie uzupełnij
+   Skopiuj plik `.env.example` do folderu `infrastructure/docker/` (w tym folderze znajduje się też przykładowy plik `.env.example`). Następnie uzupełnij
    ten plik zgodnie z własnymi założeniami. Domyślnie wypełniony plik będzie działać, choć stanowczo zalecane jest
    wprowadzenie zmian w celu zabezpieczenia aplikacji.
 
