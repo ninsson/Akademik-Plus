@@ -2,6 +2,7 @@ package repository
 
 import (
 	"akademik/internal/models"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -21,12 +22,12 @@ func (r *StatystykiRepo) GetDashboardStats() (*models.AdminStats, error) {
 		return nil, err
 	}
 
-	err = r.db.Get(&stats.OtwarteUsterki, `SELECT COUNT(*) FROM usterki WHERE status NOT IN ('Naprawiono', 'Zakonczono_bez_naprawy')`)
+	err = r.db.Get(&stats.OtwarteUsterki, `SELECT COUNT(*) FROM usterki WHERE status != 'Rozwiazane'`)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.db.Get(&stats.WszystkiePokoje, `SELECT COUNT(*) FROM pokoje`)
+	err = r.db.Get(&stats.WszystkiePokoje, `SELECT COUNT(*) FROM pokoj`)
 	if err != nil {
 		return nil, err
 	}

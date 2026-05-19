@@ -41,6 +41,7 @@ services:
       DB_NAME: ${POSTGRES_DB:-mydb}
       JWT_SECRET: ${JWT_SECRET}
       DB_SSLMODE: ${DB_SSLMODE}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     ports:
       - "8000:8000"
     restart: unless-stopped

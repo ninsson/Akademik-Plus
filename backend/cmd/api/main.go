@@ -32,7 +32,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
-	defer db.Close()
 
 	maxAttempts := 10
 	backoff := 1 * time.Second
@@ -90,6 +89,9 @@ func main() {
 	rachunkiService := services.NewRachunkiService(rachunkiRepo)
 	rachunkiHandler := handlers.NewRachunkiHandler(rachunkiService)
 
+	mux.Handle("GET /rachunki/moje", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(rachunkiHandler.GetMojeRachunki)),
+	))
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
 
@@ -113,8 +115,8 @@ func main() {
 	komentarzeService := services.NewKomentarzeService(komentarzeRepo)
 	komentarzeHandler := handlers.NewKomentarzeHandler(komentarzeService)
 
-	mux.Handle("GET /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.GetKomentarze)))
-	mux.Handle("POST /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.AddKomentarz)))
+	mux.Handle("GET /komentarze/usterka/{id}", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.GetKomentarze)))
+	mux.Handle("POST /komentarze/usterka/{id}", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.AddKomentarz)))
 
 	handlerWithCORS := middleware.CORS(mux)
 
@@ -133,5 +135,9 @@ func main() {
 
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
+	}
+
+	if closeErr := db.Close(); closeErr != nil {
+		log.Printf("Failed to close database connection: %v", closeErr)
 	}
 }
