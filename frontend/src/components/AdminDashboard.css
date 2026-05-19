@@ -465,3 +465,15 @@
 .resident-input:-moz-focusring {
     outline: none;
 }
+
+/* Date field label + layout for the accommodation form */
+.date-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-field-label {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 6px;
+}

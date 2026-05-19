@@ -833,25 +833,38 @@ const AdminDashboard = () => {
                                     </option>
                                 ))}
                             </select>
-                            <input
-                                required
-                                type="date"
-                                value={accommodationForm.poczatek_zakwaterowania}
-                                onChange={(e) => setAccommodationForm((prev) => ({ ...prev, poczatek_zakwaterowania: e.target.value }))}
-                            />
-                            <input
-                                required
-                                type="date"
-                                value={accommodationForm.koniec_zakwaterowania}
-                                onChange={(e) => setAccommodationForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))}
-                            />
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="poczatek_zakwaterowania">Data zameldowania</label>
+                                <input
+                                    id="poczatek_zakwaterowania"
+                                    aria-label="Data zameldowania"
+                                    required
+                                    type="date"
+                                    value={accommodationForm.poczatek_zakwaterowania}
+                                    onChange={(e) => setAccommodationForm((prev) => ({ ...prev, poczatek_zakwaterowania: e.target.value }))}
+                                />
+                            </div>
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="koniec_zakwaterowania">Data wymeldowania</label>
+                                <input
+                                    id="koniec_zakwaterowania"
+                                    aria-label="Data wymeldowania"
+                                    required
+                                    type="date"
+                                    value={accommodationForm.koniec_zakwaterowania}
+                                    onChange={(e) => setAccommodationForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))}
+                                />
+                            </div>
                             <button className="confirm-btn" type="submit">Przypisz mieszkańca do pokoju</button>
                         </form>
 
                         <form onSubmit={handleCheckout} className="modal-form-grid checkout-form">
                             <input type="number" placeholder="ID zakwaterowania" value={checkoutForm.id} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, id: e.target.value }))} />
-                            <input type="date" value={checkoutForm.koniec_zakwaterowania} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))} />
-                            <button className="confirm-btn" type="submit">Wymelduj</button>
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="checkout_koniec">Data wymeldowania</label>
+                                <input id="checkout_koniec" aria-label="Data wymeldowania" type="date" value={checkoutForm.koniec_zakwaterowania} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))} />
+                            </div>
+                             <button className="confirm-btn" type="submit">Wymelduj</button>
                         </form>
 
                         <div className="table-like-list">
