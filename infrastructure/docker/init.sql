@@ -11,19 +11,6 @@ CREATE TABLE uzytkownicy
     czy_wymaga_dostosowan BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE usterki
-(
-    id                          SERIAL PRIMARY KEY,
-    zglaszajacy_id              INT       NOT NULL REFERENCES uzytkownicy (id),
-    pokoj_id                    INT       NOT NULL,
-    priorytet                   TEXT      NOT NULL,
-    status                      TEXT      NOT NULL,
-    przypisany_administrator_id INT REFERENCES uzytkownicy (id),
-    opis_usterki                TEXT      NOT NULL,
-    data_zgloszenia             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_rozwiazania            TIMESTAMP
-);
-
 --  akademiki.go
 
 CREATE TABLE akademiki
@@ -61,6 +48,19 @@ CREATE TABLE zakwaterowania
     koniec_zakwaterowania DATE NOT NULL
 );
 
+CREATE TABLE usterki
+(
+    id                          SERIAL PRIMARY KEY,
+    zglaszajacy_id              INT       NOT NULL REFERENCES uzytkownicy (id),
+    pokoj_id                    INT       NOT NULL REFERENCES pokoj(id),
+    priorytet                   TEXT      NOT NULL,
+    status                      TEXT      NOT NULL,
+    przypisany_administrator_id INT REFERENCES uzytkownicy (id),
+    opis_usterki                TEXT      NOT NULL,
+    data_zgloszenia             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_rozwiazania            TIMESTAMP
+);
+
 CREATE TABLE cennik
 (
     id SERIAL PRIMARY KEY,
@@ -92,8 +92,8 @@ CREATE TABLE komentarze_usterki (
 -- Test password: "Haslo123"
 INSERT INTO uzytkownicy (imie, nazwisko, email, numer_telefonu, username, password_hash, rola, czy_wymaga_dostosowan)
 VALUES
-    ('Jan', 'Kowalski', 'jan@akademik.pl', '123456789', 'jkowalski', '$2a$10$7Y2kXmXyG1H7U3m3W.0UGe8l7YfM4fV/r8nK.9XzGv0K5.2XzVzY.', 'Mieszkaniec', FALSE),
-    ('Anna', 'Admin', 'admin@akademik.pl', '987654321', 'aadmin', '$2a$10$7Y2kXmXyG1H7U3m3W.0UGe8l7YfM4fV/r8nK.9XzGv0K5.2XzVzY.', 'Administrator', FALSE);
+    ('Jan', 'Kowalski', 'jan@akademik.pl', '123456789', 'jkowalski', '$2a$10$/4xitngJrzV0FpJsQL9uh.9m4ASxiB/juv7w0cbD1NC.aLtyT1v9a', 'Mieszkaniec', FALSE),
+    ('Anna', 'Admin', 'admin@akademik.pl', '987654321', 'aadmin', '$2a$10$/4xitngJrzV0FpJsQL9uh.9m4ASxiB/juv7w0cbD1NC.aLtyT1v9a', 'Administrator', FALSE);
 
 INSERT INTO akademiki (adres, ilosc_pieter, czy_winda, czy_dostosowany)
 VALUES ('ul. Akademicka 1, Warszawa', 5, TRUE, TRUE);
@@ -103,7 +103,7 @@ VALUES
     ('Standard', 600.00),
     ('Podwyzszony', 850.00);
 
-INSERT INTO pokoje (numer_pokoju, ile_osob, czy_kuchnia, czy_toaleta, czy_dostosowany, pietro, status_pokoju, standard, akademik_id)
+INSERT INTO pokoj (numer_pokoju, ile_osob, czy_kuchnia, czy_toaleta, czy_dostosowany, pietro, status_pokoju, standard, akademik_id)
 VALUES
     ('101', 2, FALSE, TRUE, FALSE, 1, 'Dostepny', 'Standard', 1),
     ('202', 1, TRUE, TRUE, TRUE, 2, 'Dostepny', 'Podwyzszony', 1);

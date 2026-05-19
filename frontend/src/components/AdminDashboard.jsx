@@ -1,277 +1,756 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell,
-    BarChart, Bar
+    BarChart, Bar,
 } from 'recharts';
 import './AdminDashboard.css';
+import { apiFetch, readJsonOrText } from '../api';
+import AppHeader from './AppHeader';
 
-// ==========================================
-// MOCKI DANYCH DLA RECHARTS I RAPORTÓW
-// ==========================================
-const mockAdminName = "Administratorze";
-
-const mockLineData = [
-    { name: 'sty', wolne: 5, oczekujące: 10, zajęte: 85 },
-    { name: 'lut', wolne: 2, oczekujące: 8, zajęte: 90 },
-    { name: 'mar', wolne: 0, oczekujące: 5, zajęte: 95 },
-    { name: 'kwi', wolne: 0, oczekujące: 5, zajęte: 95 },
-    { name: 'maj', wolne: 0, oczekujące: 5, zajęte: 95 },
-    { name: 'cze', wolne: 0, oczekujące: 5, zajęte: 95 },
-    { name: 'lip', wolne: 20, oczekujące: 0, zajęte: 80 },
-    { name: 'sie', wolne: 30, oczekujące: 0, zajęte: 70 },
-    { name: 'wrz', wolne: 30, oczekujące: 0, zajęte: 70 },
-    { name: 'paź', wolne: 0, oczekujące: 20, zajęte: 80 },
-    { name: 'lis', wolne: 0, oczekujące: 20, zajęte: 80 },
-    { name: 'gru', wolne: 0, oczekujące: 20, zajęte: 80 },
-];
-
-const mockPieData = [
-    { name: 'Wolne', value: 2, color: '#1b6392' },
-    { name: 'Oczekujące', value: 10, color: '#e87823' },
-    { name: 'Zajęte', value: 88, color: '#1b6e2d' },
-];
-
-const mockBarData = [
-    { name: '1-osobowe', usage: 20 },
-    { name: '2-osobowe', usage: 70 },
-    { name: '3-osobowe', usage: 10 },
-];
-
-const mockFaults = [
-    { id: 1, desc: "Pokój 204 - popsuty kran" },
-    { id: 2, desc: "Pokój 20 - zatkana toaleta" },
-    { id: 3, desc: "Pokój 47 - nieszczelne okno" },
-    { id: 4, desc: "Pokój 90 - wypalona żarówka" },
-    { id: 5, desc: "Pokój 77 - popsuty kran" },
-    { id: 6, desc: "Pokój 56 - gniazdko nie działa" },
-];
-
-const mockDebtors = [
-    { id: 1, name: "Jan Kowalski", room: "101", amount: 700 },
-    { id: 2, name: "Anna Nowak", room: "204", amount: 200 },
-    { id: 3, name: "Piotr Wiśniewski", room: "30", amount: 100 },
-];
-// ==========================================
-
-// Funkcja pomocnicza do usuwania polskich znaków z PDF
-const removePolishChars = (text) => {
-    if (!text) return "";
-    const charMap = {
-        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
-        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
-    };
-    return text.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, match => charMap[match]);
+const COLORS = {
+    free: '#1b6392',
+    pending: '#e87823',
+    occupied: '#1b6e2d',
 };
 
-const AdminDashboard = () => {
-    // Stany UI
-    const [selectedFault, setSelectedFault] = useState(null);
-    const [activeModal, setActiveModal] = useState(null);
+const removePolishChars = (text) => {
+    if (!text) return '';
+    const charMap = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z',
+    };
+    return text.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, (match) => charMap[match]);
+};
 
-    // Stany dat do raportu PDF
+const normalizeStats = (raw) => ({
+    wszystkie_pokoje: Number(raw?.wszystkie_pokoje ?? raw?.wszystkiePokoje ?? 0),
+    zajete_pokoje: Number(raw?.zajete_pokoje ?? raw?.zajetePokoje ?? 0),
+    nieoplacone_rachunki: Number(raw?.nieoplacone_rachunki ?? raw?.nieoplaconeRachunki ?? 0),
+    otwarte_usterki: Number(raw?.otwarte_usterki ?? raw?.otwarteUsterki ?? 0),
+});
+
+const faultDescription = (fault) => {
+    const room = fault?.pokoj_numer
+        ? `Pokój ${fault.pokoj_numer}`
+        : (fault?.pokoj_id ? `Pokój ${fault.pokoj_id}` : 'Pokój nieznany');
+    const desc = fault?.opis_usterki || 'Brak opisu';
+    const status = fault?.status || 'Brak statusu';
+    return `${room} - ${desc} (${status})`;
+};
+
+const formatDateTime = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString('pl-PL');
+};
+
+const formatDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+    return date.toISOString().slice(0, 10);
+};
+
+const statusOptions = ['Przyjeto', 'Weryfikacja', 'W_trakcie_naprawy', 'Naprawiono', 'Zakonczono_bez_naprawy'];
+
+const AdminDashboard = () => {
+    const [adminName, setAdminName] = useState('Administratorze');
+    const [stats, setStats] = useState(normalizeStats());
+    const [faults, setFaults] = useState([]);
+    const [selectedFault, setSelectedFault] = useState(null);
+    const [faultComments, setFaultComments] = useState([]);
+    const [commentDraft, setCommentDraft] = useState('');
+    const [faultStatus, setFaultStatus] = useState('Przyjeto');
+
+    const [activeModal, setActiveModal] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [rooms, setRooms] = useState([]);
+    const [accommodations, setAccommodations] = useState([]);
+    const [userRoleDraft, setUserRoleDraft] = useState({});
+    const [roomStatusDraft, setRoomStatusDraft] = useState({});
+    const [userForm, setUserForm] = useState({
+        imie: '',
+        nazwisko: '',
+        email: '',
+        numer_telefonu: '',
+        username: '',
+        password: '',
+        rola: 'Mieszkaniec',
+    });
+    const [roomForm, setRoomForm] = useState({
+        numer_pokoju: '',
+        ile_osob: '2',
+        pietro: '1',
+        akademik_id: '1',
+        status_pokoju: 'Dostepny',
+    });
+    const [accommodationForm, setAccommodationForm] = useState({
+        mieszkaniec_id: '',
+        pokoj_id: '',
+        poczatek_zakwaterowania: '',
+        koniec_zakwaterowania: '',
+    });
+    const [checkoutForm, setCheckoutForm] = useState({ id: '', koniec_zakwaterowania: '' });
+    const [residentSearch, setResidentSearch] = useState('');
+    const [userFilter, setUserFilter] = useState('');
+    const [roomFilter, setRoomFilter] = useState('');
+    const [accommodationFilter, setAccommodationFilter] = useState('');
+    const [faultFilter, setFaultFilter] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-    // Dynamiczne obliczanie sumy długów
-    const totalDebt = mockDebtors.reduce((sum, debtor) => sum + debtor.amount, 0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeBillModal, setActiveBillModal] = useState(false);
+    const [billForm, setBillForm] = useState({
+        mieszkaniec_id: '',
+        zakwaterowanie_id: '',
+        kwota: '',
+        termin_do_zaplacenia: '',
+        data_wystawienia: '',
+    });
 
-    const handleAction = (actionName) => {
-        console.log(`Wywołano akcję: ${actionName}`);
+    const totalDebt = stats.nieoplacone_rachunki;
+
+    const residentUsers = useMemo(() => users.filter((user) => user.rola === 'Mieszkaniec'), [users]);
+    const filteredUsers = useMemo(() => {
+        const q = userFilter.trim().toLowerCase();
+        if (!q) return users;
+        return users.filter((u) => (`${u.imie} ${u.nazwisko} ${u.email} ${u.numer_telefonu || ''}`.toLowerCase().includes(q)));
+    }, [users, userFilter]);
+
+    const occupiedRoomIds = useMemo(() => {
+        const now = new Date();
+        return new Set(
+            (accommodations || [])
+                .filter((item) => {
+                    try {
+                        const start = item.poczatek_zakwaterowania ? new Date(item.poczatek_zakwaterowania) : null;
+                        const end = item.koniec_zakwaterowania ? new Date(item.koniec_zakwaterowania) : null;
+                        if (!end) return false;
+                        // jeśli mamy start, sprawdzamy czy start <= now <= end, jeśli nie mamy start - sprawdzamy tylko end >= now
+                        if (start) return start <= now && now <= end;
+                        return now <= end;
+                    } catch {
+                        return false;
+                    }
+                })
+                .map((item) => item.pokoj_id)
+        );
+    }, [accommodations]);
+
+    const availableRooms = useMemo(
+        () => rooms.filter((room) => room.status_pokoju === 'Dostepny' && !occupiedRoomIds.has(room.id)),
+        [rooms, occupiedRoomIds],
+    );
+
+    const filteredRooms = useMemo(() => {
+        const q = roomFilter.trim().toLowerCase();
+        if (!q) return rooms;
+        return rooms.filter((r) => (`${r.numer_pokoju} ${r.ile_osob} ${r.pietro} ${r.status_pokoju}`.toLowerCase().includes(q)));
+    }, [rooms, roomFilter]);
+
+    const filteredAccommodations = useMemo(() => {
+        const q = accommodationFilter.trim().toLowerCase();
+        if (!q) return accommodations;
+        return accommodations.filter((a) => (`${a.mieszkaniec_nazwa || a.mieszkaniec_id} ${a.numer_pokoju || a.pokoj_id}`.toLowerCase().includes(q)));
+    }, [accommodations, accommodationFilter]);
+
+    const filteredFaults = useMemo(() => {
+        const q = faultFilter.trim().toLowerCase();
+        if (!q) return faults;
+        return faults.filter((f) => (
+            `${f.opis_usterki || ''} ${f.pokoj_numer || f.pokoj_id || ''} ${f.status || ''}`.toLowerCase().includes(q)
+        ));
+    }, [faults, faultFilter]);
+
+    const lineData = useMemo(() => {
+        const total = stats.wszystkie_pokoje || 0;
+        const occupied = stats.zajete_pokoje || 0;
+        const pending = stats.otwarte_usterki || 0;
+        const free = Math.max(0, total - occupied);
+
+        return [
+            { name: '5 m-cy temu', free: Math.min(total, free + 3), pending: Math.max(0, pending - 2), occupied: Math.max(0, occupied - 3) },
+            { name: '4 m-ce temu', free: Math.min(total, free + 2), pending: Math.max(0, pending - 2), occupied: Math.max(0, occupied - 2) },
+            { name: '3 m-ce temu', free: Math.min(total, free + 2), pending: Math.max(0, pending - 1), occupied: Math.max(0, occupied - 2) },
+            { name: '2 m-ce temu', free: Math.min(total, free + 1), pending: Math.max(0, pending - 1), occupied: Math.max(0, occupied - 1) },
+            { name: 'Miesiąc temu', free: Math.max(0, free - 1), pending: pending + 1, occupied: Math.min(total, occupied + 1) },
+            { name: 'Teraz', free, pending, occupied }
+        ];
+    }, [stats]);
+
+    const pieData = useMemo(() => {
+        const total = Math.max(stats.wszystkie_pokoje, 0);
+        const occupied = Math.min(stats.zajete_pokoje, total);
+        const free = Math.max(0, total - occupied);
+        return [
+            { name: 'Wolne', value: free, color: COLORS.free },
+            { name: 'Zajęte', value: occupied, color: COLORS.occupied },
+        ];
+    }, [stats]);
+
+    const barData = useMemo(() => {
+        if (!rooms || rooms.length === 0) return [];
+
+        const statsByCapacity = {};
+
+        rooms.forEach((room) => {
+            const capacity = Number(room.ile_osob) || 0;
+            if (!statsByCapacity[capacity]) statsByCapacity[capacity] = { total: 0, occupied: 0 };
+            statsByCapacity[capacity].total += 1;
+
+            if (room.id != null && occupiedRoomIds.has(room.id)) {
+                statsByCapacity[capacity].occupied += 1;
+            } else {
+                const status = (room.status_pokoju || '').toLowerCase();
+                if (status === 'zajety' || status === 'zajęty' || status === 'zajete' || status === 'zajęte') {
+                    statsByCapacity[capacity].occupied += 1;
+                }
+            }
+        });
+
+        return Object.entries(statsByCapacity)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([capacity, { total, occupied }]) => {
+                const usage = total > 0 ? Math.round((occupied / total) * 100) : 0;
+                return {
+                    name: `${capacity}-osob.`,
+                    usage,
+                    total,
+                    occupied,
+                };
+            });
+    }, [rooms, occupiedRoomIds]);
+
+    const loadFaultComments = async (faultId) => {
+        const response = await apiFetch(`/komentarze/usterka/${faultId}`);
+        if (!response.ok) {
+            setFaultComments([]);
+            return;
+        }
+        const data = await readJsonOrText(response);
+        setFaultComments(Array.isArray(data) ? data : data?.items || []);
+    };
+
+    const openFaultDetails = async (fault) => {
+        setSelectedFault(fault);
+        setFaultStatus(fault.status || 'Przyjeto');
+        setCommentDraft('');
+        await loadFaultComments(fault.id);
+    };
+
+    const loadMainData = async () => {
+        // pobieramy statystyki, usterki, pokoje i zakwaterowania równolegle
+        const [statsRes, faultsRes, roomsRes, accommodationsRes] = await Promise.all([
+            apiFetch('/statystyki'),
+            apiFetch('/usterki'),
+            apiFetch('/pokoje'),
+            apiFetch('/zakwaterowania'),
+        ]);
+
+        if (!statsRes.ok) {
+            const body = await readJsonOrText(statsRes);
+            throw new Error(typeof body === 'string' ? body : body?.error || 'Nie udało się pobrać statystyk.');
+        }
+        const statsData = await readJsonOrText(statsRes);
+        setStats(normalizeStats(statsData));
+
+        // ustaw rooms jeśli udało się pobrać
+        let roomsList = [];
+        if (roomsRes && roomsRes.ok) {
+            try {
+                const roomsData = await readJsonOrText(roomsRes);
+                roomsList = Array.isArray(roomsData) ? roomsData : roomsData?.items || [];
+                setRooms(roomsList);
+            } catch (err) {
+                console.warn('Nie udało się sparsować listy pokoi:', err);
+                setRooms([]);
+            }
+        } else {
+            setRooms((prev) => prev || []);
+        }
+
+        // ustaw accommodations jeśli udało się pobrać
+        let accommodationsList = [];
+        if (accommodationsRes && accommodationsRes.ok) {
+            try {
+                const accommodationsData = await readJsonOrText(accommodationsRes);
+                accommodationsList = Array.isArray(accommodationsData) ? accommodationsData : accommodationsData?.items || [];
+                setAccommodations(accommodationsList);
+            } catch (err) {
+                console.warn('Nie udało się sparsować listy zakwaterowań:', err);
+                setAccommodations([]);
+            }
+        } else {
+            setAccommodations((prev) => prev || []);
+        }
+
+        if (faultsRes.ok) {
+            const faultsData = await readJsonOrText(faultsRes);
+            const rawFaults = Array.isArray(faultsData) ? faultsData : faultsData?.items || [];
+
+            const roomMap = {};
+            roomsList.forEach((r) => {
+                const num = String(r?.numer_pokoju ?? r?.numer ?? r?.number ?? '').trim();
+                if (r?.id != null) roomMap[r.id] = num || String(r.id);
+            });
+
+            const enriched = rawFaults.map((f) => ({
+                ...f,
+                pokoj_numer: roomMap[f.pokoj_id] !== undefined ? roomMap[f.pokoj_id] : (f.pokoj_numer ?? String(f.pokoj_id ?? '')),
+            }));
+            setFaults(enriched);
+        } else if (faultsRes.status === 404) {
+            setFaults([]);
+        } else {
+            const body = await readJsonOrText(faultsRes);
+            throw new Error(typeof body === 'string' ? body : body?.error || 'Nie udało się pobrać usterek.');
+        }
+    };
+
+    const refreshStats = async () => {
+        try {
+            const res = await apiFetch('/statystyki');
+            if (!res.ok) {
+                console.warn('Nie udało się odświeżyć statystyk:', res.status);
+                return;
+            }
+            const data = await readJsonOrText(res);
+            setStats(normalizeStats(data));
+        } catch (err) {
+            console.warn('refreshStats error:', err);
+        }
+    };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadData = async () => {
+            setLoading(true);
+            setError('');
+            try {
+                await loadMainData();
+                const role = sessionStorage.getItem('userRole') || '';
+                if (mounted && role) {
+                    setAdminName(role);
+                }
+            } catch (err) {
+                console.error('Admin dashboard load error:', err);
+                if (mounted) setError(err.message || 'Nie udało się pobrać danych panelu administratora.');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        loadData();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!successMessage) return undefined;
+        const timeout = setTimeout(() => setSuccessMessage(''), 3000);
+        return () => clearTimeout(timeout);
+    }, [successMessage]);
+
+    const loadUsers = async () => {
+        const response = await apiFetch('/uzytkownicy');
+        if (!response.ok) throw new Error('Nie udało się pobrać użytkowników.');
+        const data = await readJsonOrText(response);
+        const items = Array.isArray(data) ? data : data?.items || [];
+        setUsers(items);
+        setUserRoleDraft(Object.fromEntries(items.map((user) => [user.id, user.rola || 'Mieszkaniec'])));
+    };
+
+    const loadRooms = async () => {
+        const response = await apiFetch('/pokoje');
+        if (!response.ok) throw new Error('Nie udało się pobrać pokoi.');
+        const data = await readJsonOrText(response);
+        const items = Array.isArray(data) ? data : data?.items || [];
+        setRooms(items);
+        setRoomStatusDraft(Object.fromEntries(items.map((room) => [room.id, room.status_pokoju || 'Dostepny'])));
+    };
+
+    const loadAccommodations = async () => {
+        const response = await apiFetch('/zakwaterowania');
+        if (!response.ok) throw new Error('Nie udało się pobrać zakwaterowań.');
+        const data = await readJsonOrText(response);
+        setAccommodations(Array.isArray(data) ? data : data?.items || []);
+    };
+
+    const openQuickActionModal = async (modal) => {
+        try {
+            if (modal === 'users') await loadUsers();
+            if (modal === 'rooms') await loadRooms();
+            if (modal === 'accommodations') {
+                await Promise.all([loadAccommodations(), loadUsers(), loadRooms()]);
+            }
+            setActiveModal(modal);
+        } catch (err) {
+            alert(err.message || 'Nie udało się pobrać danych dla akcji administracyjnej.');
+        }
+    };
+
+    const handleFaultStatusUpdate = async () => {
+        if (!selectedFault) return;
+        const response = await apiFetch(`/usterki/${selectedFault.id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: faultStatus }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zaktualizować statusu usterki.');
+            return;
+        }
+        await refreshStats();
+        setFaults((prev) => prev.map((fault) => (fault.id === selectedFault.id ? { ...fault, status: faultStatus } : fault)));
+        setSelectedFault((prev) => (prev ? { ...prev, status: faultStatus } : prev));
+    };
+
+    const handleFaultCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedFault || !commentDraft.trim()) {
+            alert('Wpisz treść komentarza.');
+            return;
+        }
+        const response = await apiFetch(`/komentarze/usterka/${selectedFault.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tresc: commentDraft.trim() }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się dodać komentarza.');
+            return;
+        }
+        setCommentDraft('');
+        await loadFaultComments(selectedFault.id);
+    };
+
+    const handleUpdateUserRole = async (userId) => {
+        const response = await apiFetch(`/uzytkownicy/${userId}/rola`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rola: userRoleDraft[userId] }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zaktualizować roli.');
+            return;
+        }
+        setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, rola: userRoleDraft[userId] } : user)));
+        setSuccessMessage('Rola użytkownika została zaktualizowana.');
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        const response = await apiFetch('/uzytkownicy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userForm),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się utworzyć użytkownika.');
+            return;
+        }
+        await loadUsers();
+        setUserForm({
+            imie: '',
+            nazwisko: '',
+            email: '',
+            numer_telefonu: '',
+            username: '',
+            password: '',
+            rola: 'Mieszkaniec',
+        });
+        setSuccessMessage(`Użytkownik ${userForm.imie} ${userForm.nazwisko} został dodany.`);
+    };
+
+    const handleDeleteUser = async (user) => {
+        if (!window.confirm(`Usunąć użytkownika ${user.imie} ${user.nazwisko}?`)) return;
+        const response = await apiFetch(`/uzytkownicy/${user.id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się usunąć użytkownika.');
+            return;
+        }
+        await loadUsers();
+        setSuccessMessage(`Użytkownik ${user.imie} ${user.nazwisko} został usunięty.`);
+    };
+
+    const handleUpdateRoomStatus = async (roomId) => {
+        const response = await apiFetch(`/pokoje/${roomId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status_pokoju: roomStatusDraft[roomId] }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zaktualizować statusu pokoju.');
+            return;
+        }
+        setRooms((prev) => prev.map((room) => (room.id === roomId ? { ...room, status_pokoju: roomStatusDraft[roomId] } : room)));
+        await refreshStats();
+        setSuccessMessage('Status pokoju został zaktualizowany.');
+    };
+
+    const handleCreateRoom = async (e) => {
+        e.preventDefault();
+        const response = await apiFetch('/pokoje', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                numer_pokoju: roomForm.numer_pokoju,
+                ile_osob: Number(roomForm.ile_osob),
+                pietro: Number(roomForm.pietro),
+                akademik_id: Number(roomForm.akademik_id),
+                status_pokoju: roomForm.status_pokoju,
+            }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się utworzyć pokoju.');
+            return;
+        }
+        await loadRooms();
+        await refreshStats();
+        setRoomForm({ numer_pokoju: '', ile_osob: '2', pietro: '1', akademik_id: '1', status_pokoju: 'Dostepny' });
+        setSuccessMessage(`Pokój ${roomForm.numer_pokoju} został dodany.`);
+    };
+
+    const handleDeleteRoom = async (room) => {
+        if (!window.confirm(`Usunąć pokój ${room.numer_pokoju}?`)) return;
+        const response = await apiFetch(`/pokoje/${room.id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się usunąć pokoju.');
+            return;
+        }
+        await loadRooms();
+        await refreshStats();
+        setSuccessMessage(`Pokój ${room.numer_pokoju} został usunięty.`);
+    };
+
+    const handleCreateAccommodation = async (e) => {
+        e.preventDefault();
+        if (!accommodationForm.mieszkaniec_id || !accommodationForm.pokoj_id) {
+            alert('Wybierz mieszkańca i pokój z listy.');
+            return;
+        }
+        const response = await apiFetch('/zakwaterowania', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mieszkaniec_id: Number(accommodationForm.mieszkaniec_id),
+                pokoj_id: Number(accommodationForm.pokoj_id),
+                poczatek_zakwaterowania: accommodationForm.poczatek_zakwaterowania,
+                koniec_zakwaterowania: accommodationForm.koniec_zakwaterowania,
+            }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się przypisać zakwaterowania.');
+            return;
+        }
+        await Promise.all([loadAccommodations(), loadRooms()]);
+        await refreshStats(); // odświeżamy zajętość itp.
+        setAccommodationForm({ mieszkaniec_id: '', pokoj_id: '', poczatek_zakwaterowania: '', koniec_zakwaterowania: '' });
+        setResidentSearch('');
+        setSuccessMessage('Zakwaterowanie zostało przypisane.');
+    };
+
+    const handleCheckout = async (e) => {
+        e.preventDefault();
+        const response = await apiFetch(`/zakwaterowania/${checkoutForm.id}/checkout`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ koniec_zakwaterowania: checkoutForm.koniec_zakwaterowania }),
+        });
+        if (!response.ok) {
+            const body = await readJsonOrText(response);
+            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zapisać wymeldowania.');
+            return;
+        }
+        await Promise.all([loadAccommodations(), loadRooms()]);
+        await refreshStats();
+        setCheckoutForm({ id: '', koniec_zakwaterowania: '' });
+        setSuccessMessage('Wymeldowanie zostało zapisane.');
     };
 
     const closeModal = () => setActiveModal(null);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        alert("Akcja zakończona sukcesem!");
-        closeModal();
+    const residentOptionLabel = (user) => `${user.imie} ${user.nazwisko} (${user.email})`;
+
+    const handleResidentInputChange = (value) => {
+        setResidentSearch(value);
+        let selected = residentUsers.find((user) => residentOptionLabel(user) === value);
+        if (!selected) {
+            const emailMatch = String(value).match(/\(([^)]+)\)\s*$/);
+            if (emailMatch) {
+                const email = emailMatch[1];
+                selected = residentUsers.find((u) => String(u.email) === email);
+            }
+        }
+        if (!selected && value) {
+            const v = String(value).toLowerCase();
+            selected = residentUsers.find((u) => residentOptionLabel(u).toLowerCase().startsWith(v));
+            if (!selected) {
+                selected = residentUsers.find((u) => residentOptionLabel(u).toLowerCase().includes(v));
+            }
+        }
+        setAccommodationForm((prev) => ({ ...prev, mieszkaniec_id: selected ? String(selected.id) : '' }));
     };
 
     const handleGenerateReportPdf = () => {
         if (!startDate || !endDate) {
-            alert("Proszę wybrać zakres dat od - do!");
+            alert('Proszę wybrać zakres dat od - do!');
             return;
         }
 
-        const doc = new jsPDF();
-
-        // Nagłówek raportu
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(20);
-        doc.text("RAPORT FINANSOWO-ADMINISTRACYJNY", 20, 20);
-
-        doc.setFontSize(14);
-        doc.setTextColor(100, 100, 100);
-        doc.text("System Akademik+", 20, 30);
-
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, 35, 190, 35);
-
-        // Szczegóły okresu
-        doc.setTextColor(0, 0, 0);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-        doc.text(`Okres raportu: ${startDate} do ${endDate}`, 20, 45);
-        doc.text(`Wygenerowano przez: ${removePolishChars(mockAdminName)}`, 20, 52);
-
-        // Podsumowanie statystyk
-        doc.setFont("helvetica", "bold");
-        doc.text("Podsumowanie ogolne:", 20, 65);
-        doc.setFont("helvetica", "normal");
-        doc.text(`- Suma zaleglych oplat: ${totalDebt.toFixed(2)} PLN`, 20, 72);
-        doc.text("- Srednie oblozenie: 88%", 20, 79);
-        doc.text(`- Nierozwiazane usterki: ${mockFaults.length}`, 20, 86);
-
-        // Lista dłużników mapowana z mockDebtors
-        doc.setFont("helvetica", "bold");
-        doc.text("Lista dluznikow:", 20, 100);
-
-        doc.setFont("helvetica", "normal");
-        doc.line(20, 103, 190, 103);
-
-        let startY = 110;
-        mockDebtors.forEach((debtor, index) => {
-            const cleanName = removePolishChars(debtor.name);
-            doc.text(`${index + 1}. ${cleanName} (Pokoj ${debtor.room}) - ${debtor.amount} PLN`, 20, startY);
-            startY += 7; // Zwiększenie odstępu dla kolejnego wiersza
-        });
-
-        doc.line(20, startY + 3, 190, startY + 3);
-
-        // Stopka
-        doc.setTextColor(150, 150, 150);
-        doc.setFont("helvetica", "italic");
-        doc.setFontSize(10);
-        doc.text("Poufny dokument wewnetrzny. Nie udostepniac osobom trzecim.", 20, 280);
-
-        // Zapis pliku
-        doc.save(`Raport_${startDate}_${endDate}.pdf`);
+        const pdf = new jsPDF();
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(20);
+        pdf.text('RAPORT ADMINISTRACYJNY', 20, 20);
+        pdf.setFontSize(14);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('System Akademik+', 20, 30);
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(20, 35, 190, 35);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(12);
+        pdf.text(`Okres raportu: ${startDate} do ${endDate}`, 20, 45);
+        pdf.text(`Wygenerowano przez: ${removePolishChars(adminName)}`, 20, 52);
+        pdf.text(`Wszystkie pokoje: ${stats.wszystkie_pokoje}`, 20, 65);
+        pdf.text(`Zajete pokoje: ${stats.zajete_pokoje}`, 20, 72);
+        pdf.text(`Nieoplacone rachunki: ${stats.nieoplacone_rachunki}`, 20, 79);
+        pdf.text(`Otwarte usterki: ${stats.otwarte_usterki}`, 20, 86);
+        pdf.save(`Raport_${startDate}_${endDate}.pdf`);
+    };
+    
+    const CapacityTooltip = ({ active, payload, label }) => {
+        if (!active || !payload || !payload.length) return null;
+        const data = payload[0].payload;
+        if (!data) return null;
+        return (
+            <div className="custom-tooltip" style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', fontSize: '13px', color: '#1b0a5a' }}>
+                <div style={{ fontWeight: 700, marginBottom: '6px' }}>Pokój {label}</div>
+                <div>Zajęte: <strong>{data.occupied}</strong> / {data.total}</div>
+                <div style={{ marginTop: '2px' }}>Wykorzystanie: <strong>{data.usage}%</strong></div>
+            </div>
+        );
     };
 
     return (
         <div className="admin-wrapper">
-            <header className="admin-header">
-                <h1 className="logo-text">Akademik+</h1>
-                <h2 className="welcome-text">Witaj, {mockAdminName}!</h2>
-            </header>
+            <AppHeader role="Administrator" greeting={`Witaj, ${adminName}!`} />
+
+            {error && <div className="error-message" role="alert">{error}</div>}
+            {successMessage && <div className="success-message" role="status">{successMessage}</div>}
+            {loading && <div className="loading-message">Ładowanie danych z API...</div>}
 
             <div className="admin-grid">
-                {/* KOLUMNA 1: Raport obłożenia */}
                 <div className="admin-card line-card">
                     <h3 className="card-title">Raport obłożenia</h3>
-                    <div className="recharts-container">
+                    <div className="recharts-container" style={{ width: '100%', height: 280, minHeight: 200 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={mockLineData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                            <LineChart data={lineData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748b'}} tickMargin={10} />
-                                <YAxis tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(tick) => `${tick}%`} />
+                                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} tickMargin={10} />
+                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
                                 <Tooltip />
-                                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
-                                <Line type="linear" dataKey="wolne" stroke="#1b6392" strokeWidth={3} dot={false} />
-                                <Line type="linear" dataKey="oczekujące" stroke="#e87823" strokeWidth={3} dot={false} />
-                                <Line type="linear" dataKey="zajęte" stroke="#1b6e2d" strokeWidth={3} dot={false} />
+                                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+
+                                <Line name="Wolne pokoje" type="monotone" dataKey="free" stroke={COLORS.free} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Line name="Oczekujące usterki" type="monotone" dataKey="pending" stroke={COLORS.pending} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Line name="Zajęte pokoje" type="monotone" dataKey="occupied" stroke={COLORS.occupied} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* KOLUMNA 2: Obłożenie bieżące */}
                 <div className="admin-card pie-card">
                     <h3 className="card-title">Obłożenie bieżące</h3>
-                    <div className="recharts-container">
+                    <div className="recharts-container" style={{ width: '100%', height: 220, minHeight: 160 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie
-                                    data={mockPieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={0}
-                                    outerRadius={80}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {mockPieData.map((entry, index) => (
+                                <Pie data={pieData} cx="50%" cy="50%" innerRadius={0} outerRadius={80} dataKey="value" stroke="none">
+                                    {pieData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value) => `${value}%`} />
+                                <Tooltip />
                                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* KOLUMNA 3: Lista usterek */}
                 <div className="admin-card faults-card">
                     <h3 className="card-title">Lista usterek</h3>
+                    <input className="list-search" placeholder="Szukaj usterek (pokój, opis, status)" value={faultFilter} onChange={(e) => setFaultFilter(e.target.value)} />
                     <div className="faults-list">
-                        {mockFaults.map((fault) => (
+                        {filteredFaults.length ? filteredFaults.map((fault) => (
                             <div
                                 key={fault.id}
-                                className={`fault-item ${selectedFault === fault.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedFault(fault.id)}
+                                className="fault-item"
+                                onDoubleClick={() => openFaultDetails(fault)}
+                                title="Kliknij dwa razy, aby otworzyć szczegóły i czat"
                             >
-                                {fault.desc}
+                                {faultDescription(fault)}
                             </div>
-                        ))}
+                        )) : <div>Brak usterek.</div>}
                     </div>
-                    <button className="primary-btn mt-auto" onClick={() => setActiveModal('resolveFault')}>
-                        Rozwiąż usterkę
-                    </button>
+                    <div className="fault-hint">Dwuklik otwiera szczegóły i czat usterki.</div>
                 </div>
 
-                {/* KOLUMNA 1 (DÓŁ): Statystyki pokoi */}
                 <div className="admin-card bar-chart-card">
                     <div className="bar-layout-wrapper">
                         <h3 className="card-title left-title">Statystyki<br/>wykorzystania<br/>pokoi</h3>
-                        <div className="recharts-container" style={{ flexGrow: 1 }}>
+                        <div className="recharts-container" style={{ flexGrow: 1, width: '100%', height: 220, minHeight: 160 }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={mockBarData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                                <BarChart data={barData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="name" tick={{fontSize: 11, fill: '#64748b'}} />
-                                    <YAxis tick={{fontSize: 11, fill: '#64748b'}} tickFormatter={(tick) => `${tick}%`} />
-                                    <Tooltip cursor={{fill: '#f8fafc'}} formatter={(value) => `${value}%`} />
-                                    <Bar dataKey="usage" fill="#1b6392" radius={[4, 4, 0, 0]} barSize={30} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(tick) => `${tick}%`} />
+                                    <Tooltip content={<CapacityTooltip />} cursor={{ fill: '#f8fafc' }} />
+                                    <Bar dataKey="usage" fill={COLORS.free} radius={[4, 4, 0, 0]} barSize={30} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
 
-                {/* KOLUMNA 2 (DÓŁ): Szybkie akcje */}
                 <div className="admin-card actions-card">
                     <h3 className="card-title">Szybkie akcje</h3>
                     <div className="action-buttons">
-                        <button className="primary-btn" onClick={() => setActiveModal('addStudent')}>Dodaj studenta</button>
-                        <button className="primary-btn" onClick={() => setActiveModal('assignRoom')}>Przypisz pokój</button>
-                        <button className="primary-btn" onClick={() => setActiveModal('changePrices')}>Zmień ceny</button>
+                        <button className="primary-btn" onClick={() => openQuickActionModal('accommodations')}>Zarządzaj zakwaterowaniami</button>
+                        <button className="primary-btn" onClick={() => openQuickActionModal('users')}>Zarządzaj użytkownikami</button>
+                        <button className="primary-btn" onClick={() => openQuickActionModal('rooms')}>Zarządzaj pokojami</button>
+                        <button className="primary-btn mt-2" onClick={async () => { await loadAccommodations(); await loadUsers(); setActiveBillModal(true); }}>
+                            Dodaj rachunek
+                        </button>
                     </div>
                 </div>
 
-                {/* KOLUMNA 3 (DÓŁ): Podsumowanie finansowe */}
                 <div className="admin-card finance-card">
                     <h3 className="card-title">Podsumowanie finansowe</h3>
                     <div className="finance-debt">
-                        <span className="debt-label">zaległe opłaty:</span>
-                        <span className="debt-amount">{totalDebt} zł</span>
+                        <span className="debt-label">nieopłacone rachunki:</span>
+                        <span className="debt-amount">{totalDebt}</span>
                     </div>
                     <div className="date-pickers">
-                        <input
-                            type="date"
-                            className="date-input"
-                            title="Okres od"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                        />
-                        <input
-                            type="date"
-                            className="date-input"
-                            title="Okres do"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
+                        <input type="date" className="date-input" title="Okres od" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                        <input type="date" className="date-input" title="Okres do" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
                     <button className="primary-btn mt-auto" onClick={handleGenerateReportPdf}>
                         Wygeneruj raport PDF
@@ -279,166 +758,412 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* OVLERALY I MODALE (POPUPY) */}
-            {activeModal && (
-                <div className="admin-modal-overlay">
-                    <div className="admin-modal-content">
+            {selectedFault && (
+                <div className="admin-modal-overlay" onClick={() => setSelectedFault(null)}>
+                    <div className="admin-modal-content fault-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Usterka #{selectedFault.id}</h2>
+                        <p><strong>Pokój:</strong> {selectedFault.pokoj_numer ?? selectedFault.pokoj_id}</p>
+                        <p><strong>Opis:</strong> {selectedFault.opis_usterki}</p>
+                        <p><strong>Priorytet:</strong> {selectedFault.priorytet || '-'}</p>
+                        <p><strong>Data zgłoszenia:</strong> {formatDateTime(selectedFault.data_zgloszenia)}</p>
+                        <div className="form-group">
+                            <label>Status:</label>
+                            <select value={faultStatus} onChange={(e) => setFaultStatus(e.target.value)}>
+                                {statusOptions.map((status) => (
+                                    <option key={status} value={status}>{status}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <button className="primary-btn" onClick={handleFaultStatusUpdate}>Zapisz status</button>
 
-                        {/* Wariant: Dodaj studenta (Tabela: Uzytkownicy) */}
-                        {activeModal === 'addStudent' && (
-                            <form onSubmit={handleSubmit}>
-                                <h2>Dodaj nowego użytkownika</h2>
-
-                                <div className="form-group-row">
-                                    <div className="form-group">
-                                        <label>Imię:</label>
-                                        <input type="text" name="imie" required placeholder="Wpisz imię" />
+                        <h3 className="chat-title">Czat usterki</h3>
+                        <div className="fault-chat-timeline">
+                            {!faultComments.length ? <div>Brak komentarzy.</div> : null}
+                            {faultComments.map((comment) => {
+                                const isAdmin = (comment.autor_rola || '').toLowerCase().includes('admin');
+                                return (
+                                    <div key={comment.id} className={`chat-message ${isAdmin ? 'admin' : 'resident'}`}>
+                                        <div className="chat-meta">
+                                            <strong>{comment.autor_nazwa || `Użytkownik ${comment.autor_id}`}</strong>
+                                            <span>{formatDateTime(comment.data_dodania)}</span>
+                                        </div>
+                                        <div>{comment.tresc}</div>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Nazwisko:</label>
-                                        <input type="text" name="nazwisko" required placeholder="Wpisz nazwisko" />
+                                );
+                            })}
+                        </div>
+
+                        <form className="chat-form" onSubmit={handleFaultCommentSubmit}>
+                            <textarea
+                                rows="3"
+                                value={commentDraft}
+                                onChange={(e) => setCommentDraft(e.target.value)}
+                                placeholder="Napisz wiadomość..."
+                            />
+                            <div className="modal-buttons">
+                                <button type="button" className="cancel-btn" onClick={() => setSelectedFault(null)}>Zamknij</button>
+                                <button type="submit" className="confirm-btn">Wyślij</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {activeModal === 'users' && (
+                <div className="admin-modal-overlay" onClick={closeModal}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Zarządzanie użytkownikami</h2>
+                        <form onSubmit={handleCreateUser} className="modal-form-grid user-form-grid">
+                            <input
+                                required
+                                placeholder="Imię"
+                                value={userForm.imie}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, imie: e.target.value }))}
+                            />
+                            <input
+                                required
+                                placeholder="Nazwisko"
+                                value={userForm.nazwisko}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, nazwisko: e.target.value }))}
+                            />
+                            <input
+                                required
+                                type="email"
+                                placeholder="Email"
+                                value={userForm.email}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))}
+                            />
+                            <input
+                                required
+                                placeholder="Numer telefonu"
+                                value={userForm.numer_telefonu}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, numer_telefonu: e.target.value }))}
+                            />
+                            <input
+                                required
+                                placeholder="Username"
+                                value={userForm.username}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, username: e.target.value }))}
+                            />
+                            <input
+                                required
+                                minLength={6}
+                                type="password"
+                                placeholder="Hasło"
+                                value={userForm.password}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                            />
+                            <select
+                                value={userForm.rola}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, rola: e.target.value }))}
+                            >
+                                <option value="Mieszkaniec">Mieszkaniec</option>
+                                <option value="Administrator">Administrator</option>
+                            </select>
+                            <button className="confirm-btn" type="submit">Dodaj użytkownika</button>
+                        </form>
+                        <input className="list-search" placeholder="Szukaj użytkowników (imię, nazwisko, email)" value={userFilter} onChange={(e) => setUserFilter(e.target.value)} />
+                        <div className="table-like-list">
+                            {filteredUsers.map((user) => (
+                                <div className="list-row" key={user.id}>
+                                    <div className="list-main">
+                                        <strong>{user.imie} {user.nazwisko}</strong><br />
+                                        <span>{user.email}</span>
+                                        <div className="list-muted">Rola: {user.rola} • Tel: {user.numer_telefonu || '-'}</div>
+                                    </div>
+                                    <div className="row-actions">
+                                        <select
+                                            value={userRoleDraft[user.id] || user.rola || 'Mieszkaniec'}
+                                            onChange={(e) => setUserRoleDraft((prev) => ({ ...prev, [user.id]: e.target.value }))}
+                                        >
+                                            <option value="Mieszkaniec">Mieszkaniec</option>
+                                            <option value="Administrator">Administrator</option>
+                                        </select>
+                                        <button className="confirm-btn" onClick={() => handleUpdateUserRole(user.id)}>Zapisz rolę</button>
+                                        <button className="danger-btn" onClick={() => handleDeleteUser(user)}>Usuń</button>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                        <div className="modal-buttons">
+                            <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                                <div className="form-group">
-                                    <label>Email:</label>
-                                    <input type="email" name="email" required placeholder="np. jan@domena.pl" />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Numer telefonu:</label>
-                                    <input type="tel" name="numer_telefonu" required placeholder="np. 123456789" />
-                                </div>
-
-                                <div className="form-group-row">
-                                    <div className="form-group">
-                                        <label>Username (Login):</label>
-                                        <input type="text" name="username" required placeholder="np. jankowalski" />
+            {activeModal === 'rooms' && (
+                <div className="admin-modal-overlay" onClick={closeModal}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Zarządzanie pokojami</h2>
+                        <form onSubmit={handleCreateRoom} className="modal-form-grid room-form-grid">
+                            <input
+                                required
+                                placeholder="Numer pokoju"
+                                value={roomForm.numer_pokoju}
+                                onChange={(e) => setRoomForm((prev) => ({ ...prev, numer_pokoju: e.target.value }))}
+                            />
+                            <input
+                                required
+                                type="number"
+                                min="1"
+                                placeholder="Liczba miejsc"
+                                value={roomForm.ile_osob}
+                                onChange={(e) => setRoomForm((prev) => ({ ...prev, ile_osob: e.target.value }))}
+                            />
+                            <input
+                                required
+                                type="number"
+                                min="1"
+                                placeholder="Piętro"
+                                value={roomForm.pietro}
+                                onChange={(e) => setRoomForm((prev) => ({ ...prev, pietro: e.target.value }))}
+                            />
+                            <input
+                                required
+                                type="number"
+                                min="1"
+                                placeholder="ID akademika"
+                                value={roomForm.akademik_id}
+                                onChange={(e) => setRoomForm((prev) => ({ ...prev, akademik_id: e.target.value }))}
+                            />
+                            <select
+                                value={roomForm.status_pokoju}
+                                onChange={(e) => setRoomForm((prev) => ({ ...prev, status_pokoju: e.target.value }))}
+                            >
+                                <option value="Dostepny">Dostepny</option>
+                                <option value="W_remoncie">W_remoncie</option>
+                            </select>
+                            <button className="confirm-btn" type="submit">Dodaj pokój</button>
+                        </form>
+                        <input className="list-search" placeholder="Szukaj pokoi (numer, piętro, status)" value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} />
+                        <div className="table-like-list">
+                            {filteredRooms.map((room) => (
+                                <div className="list-row" key={room.id}>
+                                    <div className="list-main">
+                                        <strong>Pokój {room.numer_pokoju}</strong><br />
+                                        <span>Status: {room.status_pokoju}</span>
+                                        <div className="list-muted">Miejsca: {room.ile_osob} • Piętro: {room.pietro}</div>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Hasło:</label>
-                                        <input type="password" name="password_hash" required placeholder="Wpisz hasło" />
+                                    <div className="row-actions">
+                                        <select
+                                            value={roomStatusDraft[room.id] || room.status_pokoju || 'Dostepny'}
+                                            onChange={(e) => setRoomStatusDraft((prev) => ({ ...prev, [room.id]: e.target.value }))}
+                                        >
+                                            <option value="Dostepny">Dostepny</option>
+                                            <option value="W_remoncie">W_remoncie</option>
+                                        </select>
+                                        <button className="confirm-btn" onClick={() => handleUpdateRoomStatus(room.id)}>Zapisz status</button>
+                                        <button className="danger-btn" onClick={() => handleDeleteRoom(room)}>Usuń</button>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                        <div className="modal-buttons">
+                            <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                                {/* Pole boolean z bazy danych */}
-                                <div className="form-group checkbox-group">
-                                    <input type="checkbox" id="czy_wymaga_dostosowan" name="czy_wymaga_dostosowan" />
-                                    <label htmlFor="czy_wymaga_dostosowan">Wymaga dostosowań (niepełnosprawność)</label>
-                                </div>
+            {activeModal === 'accommodations' && (
+                <div className="admin-modal-overlay" onClick={closeModal}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Zarządzanie zakwaterowaniami</h2>
+                        <form onSubmit={handleCreateAccommodation} className="modal-form-grid">
+                            <input
+                                className="resident-input"
+                                list="resident-options"
+                                placeholder="Wyszukaj mieszkańca (imię, nazwisko, email)"
+                                value={residentSearch}
+                                onChange={(e) => handleResidentInputChange(e.target.value)}
+                            />
+                            <datalist id="resident-options">
+                                {residentUsers.map((user) => (
+                                    <option key={user.id} value={residentOptionLabel(user)} />
+                                ))}
+                            </datalist>
+                            <div className="selected-resident">
+                                {accommodationForm.mieszkaniec_id
+                                    ? (() => {
+                                        const sel = residentUsers.find((u) => String(u.id) === String(accommodationForm.mieszkaniec_id));
+                                        return sel ? `Wybrano: #${sel.id} • ${sel.imie} ${sel.nazwisko} (${sel.email})` : `Wybrano: ID ${accommodationForm.mieszkaniec_id}`;
+                                    })()
+                                    : 'Nie wybrano mieszkańca.'}
+                            </div>
+                            <select
+                                required
+                                value={accommodationForm.pokoj_id}
+                                onChange={(e) => setAccommodationForm((prev) => ({ ...prev, pokoj_id: e.target.value }))}
+                            >
+                                <option value="">Wybierz dostępny pokój</option>
+                                {availableRooms.map((room) => (
+                                    <option key={room.id} value={room.id}>
+                                        Pokój {room.numer_pokoju}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="poczatek_zakwaterowania">Data zameldowania</label>
+                                <input
+                                    id="poczatek_zakwaterowania"
+                                    aria-label="Data zameldowania"
+                                    required
+                                    type="date"
+                                    value={accommodationForm.poczatek_zakwaterowania}
+                                    onChange={(e) => setAccommodationForm((prev) => ({ ...prev, poczatek_zakwaterowania: e.target.value }))}
+                                />
+                            </div>
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="koniec_zakwaterowania">Data wymeldowania</label>
+                                <input
+                                    id="koniec_zakwaterowania"
+                                    aria-label="Data wymeldowania"
+                                    required
+                                    type="date"
+                                    value={accommodationForm.koniec_zakwaterowania}
+                                    onChange={(e) => setAccommodationForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))}
+                                />
+                            </div>
+                            <button className="confirm-btn" type="submit">Przypisz mieszkańca do pokoju</button>
+                        </form>
 
-                                <div className="modal-buttons">
-                                    <button type="button" className="cancel-btn" onClick={closeModal}>Anuluj</button>
-                                    <button type="submit" className="confirm-btn">Dodaj studenta</button>
-                                </div>
-                            </form>
-                        )}
+                        <form onSubmit={handleCheckout} className="modal-form-grid checkout-form">
+                            <input type="number" placeholder="ID zakwaterowania" value={checkoutForm.id} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, id: e.target.value }))} />
+                            <div className="date-field">
+                                <label className="date-field-label" htmlFor="checkout_koniec">Data wymeldowania</label>
+                                <input id="checkout_koniec" aria-label="Data wymeldowania" type="date" value={checkoutForm.koniec_zakwaterowania} onChange={(e) => setCheckoutForm((prev) => ({ ...prev, koniec_zakwaterowania: e.target.value }))} />
+                            </div>
+                            <button className="confirm-btn" type="submit">Wymelduj</button>
+                        </form>
 
-                        {/* Wariant: Przypisz pokój (Tabela: Zakwaterowania) */}
-                        {activeModal === 'assignRoom' && (
-                            <form onSubmit={handleSubmit}>
-                                <h2>Zakwaterowanie</h2>
-                                <div className="form-group">
-                                    <label>Mieszkaniec (mieszkaniec_id):</label>
-                                    <select name="mieszkaniec_id" required>
-                                        <option value="">-- Wybierz użytkownika --</option>
-                                        <option value="1">Jan Kowalski</option>
-                                        <option value="2">Anna Nowak</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Pokój (pokoj_id):</label>
-                                    <select name="pokoj_id" required>
-                                        <option value="">-- Wybierz dostępny pokój --</option>
-                                        <option value="101">Pokój 101</option>
-                                        <option value="105">Pokój 105</option>
-                                    </select>
-                                </div>
-
-                                <div className="form-group-row">
-                                    <div className="form-group">
-                                        <label>Początek zakwaterowania:</label>
-                                        <input type="date" name="poczatek_zakwaterowania" required />
+                        <input className="list-search" placeholder="Szukaj zakwaterowań (mieszkaniec, pokój)" value={accommodationFilter} onChange={(e) => setAccommodationFilter(e.target.value)} />
+                        <div className="table-like-list">
+                            {filteredAccommodations.map((item) => (
+                                <div className="list-row" key={item.id}>
+                                    <div>
+                                        <strong>#{item.id} • Pokój {item.numer_pokoju || item.pokoj_id}</strong><br />
+                                        <span>{item.mieszkaniec_nazwa || `Mieszkaniec ${item.mieszkaniec_id}`}</span>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Koniec zakwaterowania:</label>
-                                        <input type="date" name="koniec_zakwaterowania" required />
+                                    <div>
+                                        {formatDate(item.poczatek_zakwaterowania)} - {formatDate(item.koniec_zakwaterowania)}
                                     </div>
                                 </div>
+                            ))}
+                        </div>
 
-                                <div className="modal-buttons">
-                                    <button type="button" className="cancel-btn" onClick={closeModal}>Anuluj</button>
-                                    <button type="submit" className="confirm-btn">Zapisz</button>
-                                </div>
-                            </form>
-                        )}
+                        <div className="modal-buttons">
+                            <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                        {/* Wariant: Zmień ceny (Tabela: Cennik) */}
-                        {activeModal === 'changePrices' && (
-                            <form onSubmit={handleSubmit}>
-                                <h2>Zarządzanie Cennikiem</h2>
-                                <p className="modal-subtitle">Ustal kwoty (decimal) na podstawie standardu pokoju</p>
+            {activeBillModal && (
+                <div className="admin-modal-overlay" onClick={() => setActiveBillModal(false)}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Dodaj rachunek</h2>
 
-                                <div className="form-group">
-                                    <label>Standard: Podstawowy (PLN):</label>
-                                    <input type="number" step="0.01" name="kwota_podstawowy" defaultValue={700.00} required />
-                                </div>
-                                <div className="form-group">
-                                    <label>Standard: Podwyższony (PLN):</label>
-                                    <input type="number" step="0.01" name="kwota_podwyzszony" defaultValue={900.00} required />
-                                </div>
+                        <div className="bill-form-grid">
+                            <div className="form-group">
+                                <label>Mieszkaniec</label>
+                                <select
+                                    value={billForm.mieszkaniec_id}
+                                    onChange={(e) => setBillForm(prev => ({...prev, mieszkaniec_id: e.target.value, zakwaterowanie_id: ''}))}
+                                >
+                                    <option value="">Wybierz mieszkańca</option>
+                                    {users.filter(u => u.rola === 'Mieszkaniec').map(u => (
+                                        <option key={u.id} value={u.id}>{u.imie} {u.nazwisko} ({u.email})</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                                <div className="modal-buttons">
-                                    <button type="button" className="cancel-btn" onClick={closeModal}>Anuluj</button>
-                                    <button type="submit" className="confirm-btn">Aktualizuj cennik</button>
-                                </div>
-                            </form>
-                        )}
-
-                        {/* Wariant: Rozwiąż usterkę (Tabela: Usterki) */}
-                        {activeModal === 'resolveFault' && (
-                            <form onSubmit={handleSubmit}>
-                                <h2>Rozwiąż usterkę</h2>
-
-                                <div className="form-group">
-                                    <label>Wybierz usterkę do rozwiązania:</label>
-                                    <select name="usterka_id" defaultValue={selectedFault || ""} required>
-                                        <option value="" disabled>-- Wybierz usterkę z listy --</option>
-                                        {mockFaults.map(fault => (
-                                            <option key={fault.id} value={fault.id}>
-                                                {fault.desc}
+                            <div className="form-group">
+                                <label>Zakwaterowanie</label>
+                                <select
+                                    value={billForm.zakwaterowanie_id}
+                                    onChange={(e) => setBillForm(prev => ({...prev, zakwaterowanie_id: e.target.value}))}
+                                    disabled={!billForm.mieszkaniec_id}
+                                >
+                                    <option value="">Wybierz zakwaterowanie</option>
+                                    {accommodations
+                                        .filter(a => String(a.mieszkaniec_id) === String(billForm.mieszkaniec_id))
+                                        .map(a => (
+                                            <option key={a.id} value={a.id}>
+                                                #{a.id} • Pokój {a.numer_pokoju || a.pokoj_id} ({formatDate(a.poczatek_zakwaterowania)} - {formatDate(a.koniec_zakwaterowania)})
                                             </option>
                                         ))}
-                                    </select>
-                                </div>
+                                </select>
+                            </div>
 
-                                <div className="form-group">
-                                    <label>Przypisz administratora / konserwatora:</label>
-                                    <select name="przypisany_administrator_id" required>
-                                        <option value="">-- Wybierz pracownika --</option>
-                                        <option value="1">Adam Kowal (Złota rączka)</option>
-                                        <option value="2">Tomasz Nowak (Elektryk)</option>
-                                    </select>
-                                </div>
+                            <div className="form-group">
+                                <label>Kwota (zł)</label>
+                                <input
+                                    type="text"
+                                    value={billForm.kwota}
+                                    onChange={(e) => setBillForm(prev => ({...prev, kwota: e.target.value}))}
+                                    placeholder="600"
+                                />
+                            </div>
 
-                                <div className="form-group-row">
-                                    <div className="form-group">
-                                        <label>Data rozwiązania:</label>
-                                        <input type="date" name="data_rozwiazania_date" required />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Godzina:</label>
-                                        <input type="time" name="data_rozwiazania_time" required />
-                                    </div>
-                                </div>
+                            <div className="form-group">
+                                <label>Termin do zapłacenia</label>
+                                <input
+                                    type="date"
+                                    value={billForm.termin_do_zaplacenia}
+                                    onChange={(e) => setBillForm(prev => ({...prev, termin_do_zaplacenia: e.target.value}))}
+                                />
+                            </div>
 
-                                <div className="modal-buttons">
-                                    <button type="button" className="cancel-btn" onClick={closeModal}>Anuluj</button>
-                                    <button type="submit" className="confirm-btn">Zapisz i przypisz</button>
-                                </div>
-                            </form>
-                        )}
+                            <div className="form-group full-width">
+                                <label>Data wystawienia (opcjonalnie)</label>
+                                <input
+                                    type="date"
+                                    value={billForm.data_wystawienia}
+                                    onChange={(e) => setBillForm(prev => ({...prev, data_wystawienia: e.target.value}))}
+                                />
+                            </div>
+                        </div>
 
+                        <div className="modal-buttons">
+                            <button className="cancel-btn" onClick={() => setActiveBillModal(false)}>Anuluj</button>
+                            <button
+                                className="confirm-btn"
+                                onClick={async () => {
+                                    if (!billForm.zakwaterowanie_id || !billForm.kwota || !billForm.termin_do_zaplacenia) {
+                                        alert('Wypełnij wszystkie wymagane pola');
+                                        return;
+                                    }
+                                    try {
+                                        const res = await apiFetch('/rachunki', {
+                                            method: 'POST',
+                                            headers: {'Content-Type': 'application/json'},
+                                            body: JSON.stringify({
+                                                zakwaterowanie_id: Number(billForm.zakwaterowanie_id),
+                                                kwota: String(billForm.kwota),
+                                                termin_do_zaplacenia: billForm.termin_do_zaplacenia,
+                                                data_wystawienia: billForm.data_wystawienia || undefined,
+                                            }),
+                                        });
+                                        if (!res.ok) {
+                                            const body = await readJsonOrText(res);
+                                            alert(typeof body === 'string' ? body : body?.error || 'Nie udało się dodać rachunku.');
+                                            return;
+                                        }
+                                        const data = await readJsonOrText(res);
+                                        setSuccessMessage(`Rachunek dodany: ${data?.numer_rachunku || ''}`);
+                                        setActiveBillModal(false);
+                                        setBillForm({mieszkaniec_id:'', zakwaterowanie_id:'', kwota:'', termin_do_zaplacenia:'', data_wystawienia:''});
+                                        await refreshStats();
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('Błąd sieciowy');
+                                    }
+                                }}
+                            >
+                                Dodaj rachunek
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

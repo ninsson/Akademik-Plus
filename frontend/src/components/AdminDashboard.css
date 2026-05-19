@@ -1,12 +1,16 @@
 /* --- GŁÓWNY LAYOUT --- */
 .admin-wrapper {
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     background-color: #cbd4db;
     padding: 0 10px 10px 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     box-sizing: border-box;
     margin: -8px;
 }
+
 .admin-header {
     margin-bottom: 5px;
 }
@@ -28,8 +32,11 @@
 /* --- SIATKA (GRID) --- */
 .admin-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr; /* Pierwsza kolumna nieco szersza, by wykres liniowy miał oddech */
+    grid-template-columns: 1.3fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 10px;
+    flex-grow: 1;
+    min-height: 0;
 }
 
 /* --- KARTY --- */
@@ -40,6 +47,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .card-title {
@@ -51,20 +59,21 @@
 }
 
 /* --- RECHARTS WRAPPER --- */
-/* Wymuszamy określoną wysokość na kontenerze, bo ResponsiveContainer Recharts musi znać rozmiar rodzica */
 .recharts-container {
     width: 100%;
-    height: 195px;
+    flex-grow: 1;
+    min-height: 0;
 }
 
-/* Specjalny layout dla lewego dolnego rogu (Wykres słupkowy) */
 .bar-layout-wrapper {
     display: flex;
     height: 100%;
-    align-items: center;
+    align-items: stretch;
 }
 
 .left-title {
+    display: flex;
+    align-items: center;
     text-align: left;
     margin-right: 20px;
     margin-bottom: 0;
@@ -77,9 +86,10 @@
     flex-direction: column;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    margin-bottom: 15px;
-    max-height: 195px;
+    margin-bottom: 5px;
+    flex-grow: 1;
     overflow-y: auto;
+    max-height: none;
 }
 
 .fault-item {
@@ -94,6 +104,7 @@
 .fault-item:last-child { border-bottom: none; }
 .fault-item:hover { background-color: #f8fafc; }
 .fault-item.selected { background-color: #e0e7ff; font-weight: 600; }
+.fault-hint { margin-top: 8px; font-size: 12px; color: #475569; }
 
 /* --- SZYBKIE AKCJE --- */
 .action-buttons {
@@ -157,7 +168,20 @@
 
 /* RESPANSYWNOŚĆ */
 @media (max-width: 1100px) {
-    .admin-grid { grid-template-columns: 1fr; }
+    .admin-wrapper {
+        height: auto;
+        overflow: visible;
+    }
+    .admin-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+    .recharts-container {
+        min-height: 250px;
+    }
+    .faults-list {
+        max-height: 250px;
+    }
     .bar-layout-wrapper { flex-direction: column; align-items: flex-start; }
     .left-title { margin-bottom: 20px; text-align: center; width: 100%; }
 }
@@ -276,4 +300,274 @@
     border: none;
     background: #1b6392;
     color: white;
+}
+
+.fault-modal-content {
+    width: min(820px, 95vw);
+}
+
+.chat-title {
+    margin: 16px 0 8px;
+    color: #1b0a5a;
+}
+
+.fault-chat-timeline {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8fafc;
+}
+
+.chat-message {
+    max-width: 80%;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.chat-message.admin {
+    align-self: flex-start;
+    background: #e2e8f0;
+}
+
+.chat-message.resident {
+    align-self: flex-end;
+    background: #dbeafe;
+}
+
+.chat-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.chat-form {
+    margin-top: 12px;
+}
+
+.chat-form textarea {
+    width: 100%;
+    resize: vertical;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.table-like-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.list-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    align-items: center;
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.modal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.modal-form-grid input {
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+.modal-form-grid button {
+    grid-column: 1 / -1;
+}
+
+.user-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.user-form-grid button {
+    grid-column: span 2;
+}
+
+.room-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.room-form-grid button {
+    grid-column: span 2;
+}
+
+.checkout-form {
+    margin-top: 8px;
+}
+
+.list-main {
+    min-width: 0;
+}
+
+.list-muted {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.danger-btn {
+    border: none;
+    background: #b91c1c;
+    color: white;
+    border-radius: 6px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.danger-btn:hover {
+    background: #991b1b;
+}
+
+.success-message {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.resident-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 10px;
+}
+
+.resident-input::-webkit-search-decoration,
+.resident-input::-webkit-search-cancel-button,
+.resident-input::-webkit-search-results-button,
+.resident-input::-webkit-search-results-decoration,
+.resident-input::-webkit-outer-spin-button,
+.resident-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+.resident-input::-ms-clear,
+.resident-input::-ms-expand {
+    display: none;
+}
+
+.resident-input:-moz-focusring {
+    outline: none;
+}
+
+.date-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-field-label {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.list-search {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 0.95rem;
+    color: #0f172a;
+    box-sizing: border-box;
+}
+
+.selected-resident {
+    font-size: 0.9rem;
+    color: #1b0a5a;
+    margin: 6px 0 4px 0;
+}
+
+/* --- Formularz dodawania rachunku --- */
+.bill-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+    margin-bottom: 24px;
+}
+
+.bill-form-grid .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.bill-form-grid .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.bill-form-grid .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1b0a5a;
+    margin-bottom: 0;
+}
+
+.bill-form-grid input,
+.bill-form-grid select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1b0a5a;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    margin-top: 0;
+}
+
+.bill-form-grid input:focus,
+.bill-form-grid select:focus {
+    outline: none;
+    border-color: #1b0a5a;
+}
+
+.bill-form-grid select:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .bill-form-grid {
+        grid-template-columns: 1fr;
+    }
 }

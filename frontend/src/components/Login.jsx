@@ -1,14 +1,26 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import { apiFetch, readJsonOrText, setAuthToken } from '../api';
+
+const decodeJwt = (token) => {
+    try {
+        const parts = token.split('.');
+        if (parts.length < 2) return null;
+        const payload = parts[1];
+        const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        return json;
+    } catch {
+        return null;
+    }
+};
 
 const Login = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-
-    // Weź URL API z env (Vite)
-    const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,37 +28,43 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API}/login`, {
+            const res = await apiFetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
 
+            const body = await readJsonOrText(res);
             if (!res.ok) {
-                // spróbuj odczytać odpowiedź z serwera
-                let text;
-                try {
-                    text = await res.text();
-                } catch {
-                    text = 'Błąd logowania';
-                }
-                throw new Error(text || `Status ${res.status}`);
+                setError(typeof body === 'string' ? body : body?.error || `Status ${res.status}`);
+                return;
             }
 
-            const data = await res.json(); // oczekujemy { token: "..." }
-            if (!data.token) throw new Error('Brak tokena w odpowiedzi');
+            if (!body?.token) {
+                setError('Brak tokena w odpowiedzi');
+                return;
+            }
 
-            // Zapis tokena tylko na czas bieżącej sesji przeglądarki.
-            // Docelowo preferowany jest token/sesja w ciasteczku httpOnly po stronie backendu.
-            sessionStorage.setItem('token', data.token);
+            setAuthToken(body.token);
 
-            // opcjonalnie: możesz przekierować użytkownika dalej
-            // window.location.href = '/dashboard';
+            let role = body.rola || body.role || '';
+            if (!role) {
+                const claims = decodeJwt(body.token);
+                role = claims?.rola || claims?.role || '';
+            }
+
+            if (role) {
+                sessionStorage.setItem('userRole', role);
+            }
+
             console.log('Zalogowano, token zapisany w sessionStorage.');
 
-            // wyczyść pola / odznacz loading
-            setEmail('');
-            setPassword('');
+            const roleLower = role.toString().toLowerCase();
+            if (roleLower.includes('admin')) {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
         } catch (err) {
             console.error('Login error:', err);
             setError(err.message || 'Błąd logowania');
@@ -93,7 +111,7 @@ const Login = () => {
                     </button>
                 </form>
 
-                <button type="button" className="reset-btn">
+                <button type="button" className="reset-btn" onClick={() => navigate('/login') }>
                     Zresetuj hasło
                 </button>
             </div>

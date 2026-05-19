@@ -32,7 +32,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
-	defer db.Close()
 
 	maxAttempts := 10
 	backoff := 1 * time.Second
@@ -66,6 +65,15 @@ func main() {
 	uzytkownicyHandler := handlers.NewUzytkownicyHandler(uzytkownicyService)
 
 	mux.Handle("GET /uzytkownicy/{id}", middleware.JWTMiddleware(http.HandlerFunc(uzytkownicyHandler.GetByID)))
+	mux.Handle("GET /uzytkownicy", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(uzytkownicyHandler.GetAll)),
+	))
+	mux.Handle("PATCH /uzytkownicy/{id}/rola", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(uzytkownicyHandler.UpdateRole)),
+	))
+	mux.Handle("DELETE /uzytkownicy/{id}", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(uzytkownicyHandler.Delete)),
+	))
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
 
 	pokojeRepo := repository.NewPokojeRepo(db)
@@ -74,6 +82,12 @@ func main() {
 
 	mux.Handle("GET /pokoje", middleware.JWTMiddleware(http.HandlerFunc(pokojeHandler.GetAll)))
 	mux.Handle("POST /pokoje", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(pokojeHandler.Create))))
+	mux.Handle("DELETE /pokoje/{id}", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(pokojeHandler.Delete)),
+	))
+	mux.Handle("PATCH /pokoje/{id}/status", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(pokojeHandler.UpdateStatus)),
+	))
 
 	usterkiRepo := repository.NewUsterkiRepo(db)
 	usterkiService := services.NewUsterkiService(usterkiRepo, pokojeRepo)
@@ -85,11 +99,23 @@ func main() {
 	mux.Handle("GET /usterki", middleware.JWTMiddleware(
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(usterkiHandler.GetAll)),
 	))
+	mux.Handle("GET /usterki/moje", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(usterkiHandler.GetMoje)),
+	))
 
 	rachunkiRepo := repository.NewRachunkiRepo(db)
 	rachunkiService := services.NewRachunkiService(rachunkiRepo)
 	rachunkiHandler := handlers.NewRachunkiHandler(rachunkiService)
 
+	mux.Handle("GET /rachunki/moje", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(rachunkiHandler.GetMojeRachunki)),
+	))
+	mux.Handle("GET /rachunki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetAll)),
+	))
+	mux.Handle("POST /rachunki", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.Create)),
+	))
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
 
@@ -99,6 +125,15 @@ func main() {
 
 	mux.Handle("GET /zakwaterowania/moje", middleware.JWTMiddleware(
 		middleware.RequireRole(models.Mieszkaniec)(http.HandlerFunc(zakwaterowaniaHandler.GetMojeZakwaterowania)),
+	))
+	mux.Handle("GET /zakwaterowania", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(zakwaterowaniaHandler.GetAll)),
+	))
+	mux.Handle("POST /zakwaterowania", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(zakwaterowaniaHandler.Create)),
+	))
+	mux.Handle("PATCH /zakwaterowania/{id}/checkout", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(zakwaterowaniaHandler.Checkout)),
 	))
 
 	statystykiRepo := repository.NewStatystykiRepo(db)
@@ -113,8 +148,8 @@ func main() {
 	komentarzeService := services.NewKomentarzeService(komentarzeRepo)
 	komentarzeHandler := handlers.NewKomentarzeHandler(komentarzeService)
 
-	mux.Handle("GET /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.GetKomentarze)))
-	mux.Handle("POST /usterki/{id}/wiadomosci", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.AddKomentarz)))
+	mux.Handle("GET /komentarze/usterka/{id}", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.GetKomentarze)))
+	mux.Handle("POST /komentarze/usterka/{id}", middleware.JWTMiddleware(http.HandlerFunc(komentarzeHandler.AddKomentarz)))
 
 	handlerWithCORS := middleware.CORS(mux)
 
@@ -133,5 +168,9 @@ func main() {
 
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
+	}
+
+	if closeErr := db.Close(); closeErr != nil {
+		log.Printf("Failed to close database connection: %v", closeErr)
 	}
 }

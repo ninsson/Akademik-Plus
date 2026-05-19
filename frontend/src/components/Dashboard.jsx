@@ -1,65 +1,261 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import roomImg from '../assets/room.png';
+import { apiFetch, readJsonOrText } from '../api';
+import AppHeader from './AppHeader';
 
-// ==========================================
-// MOCKI DANYCH - to w przyszłości przyjdzie z backendu (np. przez fetch/axios)
-// ==========================================
-const mockUserData = {
-    name: "Jan Kowalski"
+const mapPayment = (payment) => ({
+    id: payment.numer_rachunku ?? payment.id ?? `${payment.data || payment.date}-${payment.opis || payment.desc}`,
+    date: payment.data_wystawienia || payment.data || payment.date || '',
+    desc: payment.okres_rozliczeniowy || payment.dodatkowe_uwagi || payment.opis || payment.desc || '',
+    amount: Number(payment.kwota ?? payment.amount ?? 0),
+    status: payment.czy_oplacone === true || payment.oplacone === true || payment.status === 'OPŁACONE' ? 'OPŁACONE' : 'NIEOPŁACONE',
+});
+
+const formatDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString('pl-PL');
 };
-
-const mockPayments = [
-    { id: 1, date: "10-05-2026", desc: "Opłata za pokój 101, maj 2026", amount: 700, status: "NIEOPŁACONE" },
-    { id: 2, date: "10-04-2026", desc: "Opłata za pokój 101, kwiecień 2026", amount: 700, status: "OPŁACONE" },
-    { id: 3, date: "10-03-2026", desc: "Opłata za pokój 101, marzec 2026", amount: 700, status: "OPŁACONE" },
-    { id: 4, date: "10-02-2026", desc: "Opłata za pokój 101, luty 2026", amount: 700, status: "OPŁACONE" },
-    { id: 5, date: "10-01-2026", desc: "Opłata za pokój 101, styczeń 2026", amount: 700, status: "OPŁACONE" },
-    { id: 6, date: "10-12-2025", desc: "Opłata za pokój 101, grudzień 2025", amount: 700, status: "OPŁACONE" },
-    { id: 7, date: "10-11-2025", desc: "Opłata za pokój 101, listopad 2025", amount: 700, status: "OPŁACONE" },
-];
-
-const mockResidenceHistory = [
-    { id: 1, dorm: "3 Dom Studencki", room: "Pokój 101", date: "od 01-10-2025", isCurrent: true },
-    { id: 2, dorm: "3 Dom Studencki", room: "Pokój 30", date: "01-10-2024 - 30-09-2025", isCurrent: false },
-    { id: 3, dorm: "3 Dom Studencki", room: "Pokój 47", date: "01-10-2023 - 30-09-2024", isCurrent: false },
-    { id: 4, dorm: "1 Dom Studencki", room: "Pokój 202", date: "01-10-2022 - 30-09-2023", isCurrent: false },
-];
-
-const mockRoomDetails = {
-    type: "Pokój standardowy",
-    number: "101",
-    dorm: "3 Dom Studencki",
-    // imageUrl: "link_do_obrazka_z_backendu.png" // Odkomentujesz, gdy backend to obsłuży
-};
-// ==========================================
 
 const Dashboard = () => {
-    // Stan formularza zgłoszenia usterki (to wyślesz na backend)
-    const [faultForm, setFaultForm] = useState({
-        roomNumber: '',
-        category: '',
-        description: ''
-    });
+    const navigate = useNavigate();
+    const [userData, setUserData] = useState({ name: 'Mieszkańcu' });
+    const [payments, setPayments] = useState([]);
+    const [billsMessage, setBillsMessage] = useState('');
+    const [accommodation, setAccommodation] = useState(null);
+    const [accommodationMessage, setAccommodationMessage] = useState('');
+    const [faults, setFaults] = useState([]);
+    const [faultForm, setFaultForm] = useState({ pokoj_numer: '', priorytet: '', opis_usterki: '' });
+    const [activeFaultTab, setActiveFaultTab] = useState('new');
+    const [selectedFault, setSelectedFault] = useState(null);
+    const [faultComments, setFaultComments] = useState([]);
+    const [commentDraft, setCommentDraft] = useState('');
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const handleFaultSubmit = (e) => {
+    const currentUserRole = useMemo(() => (sessionStorage.getItem('userRole') || '').toLowerCase(), []);
+
+    const loadFaults = async () => {
+        const response = await apiFetch('/usterki/moje');
+        if (!response.ok) {
+            if (response.status === 404) {
+                setFaults([]);
+                return;
+            }
+            throw new Error('Nie udało się pobrać usterek.');
+        }
+        const data = await readJsonOrText(response);
+        const items = Array.isArray(data) ? data : data?.items || [];
+        setFaults(items);
+    };
+
+    const loadComments = async (faultId) => {
+        setCommentsLoading(true);
+        try {
+            const response = await apiFetch(`/komentarze/usterka/${faultId}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    setFaultComments([]);
+                    return;
+                }
+                throw new Error('Nie udało się pobrać komentarzy.');
+            }
+            const data = await readJsonOrText(response);
+            const items = Array.isArray(data) ? data : data?.items || [];
+            setFaultComments(items);
+        } catch (err) {
+            console.error('Comments load error:', err);
+            setFaultComments([]);
+        } finally {
+            setCommentsLoading(false);
+        }
+    };
+
+    const openFaultDetails = async (fault) => {
+        setSelectedFault(fault);
+        setCommentDraft('');
+        await loadComments(fault.id);
+    };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadDashboard = async () => {
+            setLoading(true);
+            setError('');
+            setBillsMessage('');
+            setAccommodationMessage('');
+
+            try {
+                const [paymentsRes, residenceRes] = await Promise.all([
+                    apiFetch('/rachunki/moje'),
+                    apiFetch('/zakwaterowania/moje'),
+                ]);
+
+                if (!mounted) return;
+
+                if (paymentsRes.ok) {
+                    const data = await readJsonOrText(paymentsRes);
+                    const items = Array.isArray(data) ? data : data?.rachunki || data?.items || [];
+                    setPayments(items.map(mapPayment));
+                    if (!items.length) setBillsMessage('Brak aktywnych rachunków.');
+                } else if (paymentsRes.status === 404) {
+                    setPayments([]);
+                    setBillsMessage('Brak aktywnych rachunków.');
+                } else if (paymentsRes.status === 401 || paymentsRes.status === 403) {
+                    setError('Brak dostępu do rachunków. Zaloguj się ponownie.');
+                } else {
+                    setError('Nie udało się pobrać rachunków.');
+                }
+
+                if (residenceRes.ok) {
+                    const data = await readJsonOrText(residenceRes);
+                    const item = Array.isArray(data) ? data[0] : data;
+                    if (item) {
+                        setAccommodation(item);
+                        setUserData({ name: item.mieszkaniec_nazwa || 'Mieszkańcu' });
+                        setFaultForm((prev) => ({
+                            ...prev,
+                            pokoj_numer: String(item.numer_pokoju || ''),
+                        }));
+                    }
+                } else if (residenceRes.status === 404) {
+                    setAccommodation(null);
+                    setAccommodationMessage('No active accommodation found.');
+                } else if (residenceRes.status === 401 || residenceRes.status === 403) {
+                    setError((prev) => prev || 'Brak dostępu do historii zakwaterowań.');
+                } else {
+                    setError((prev) => prev || 'Błąd serwera przy pobieraniu zakwaterowania.');
+                }
+
+                await loadFaults();
+            } catch (err) {
+                console.error('Dashboard load error:', err);
+                if (mounted) setError('Nie udało się pobrać danych z API.');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        loadDashboard();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const handleFaultSubmit = async (e) => {
         e.preventDefault();
-        console.log("Wysyłam zgłoszenie na backend:", faultForm);
-        // Tutaj dodasz logikę wysyłania (np. fetch POST)
+        const pokojInput = (faultForm.pokoj_numer || '').trim();
+        if (!pokojInput || !faultForm.priorytet || !faultForm.opis_usterki.trim()) {
+            alert('Uzupełnij wszystkie pola zgłoszenia.');
+            return;
+        }
+
+        try {
+            const pokojeRes = await apiFetch('/pokoje');
+            if (!pokojeRes.ok) {
+                const body = await readJsonOrText(pokojeRes);
+                alert(typeof body === 'string' ? body : 'Nie udało się pobrać listy pokoi');
+                return;
+            }
+            const pokojeData = await readJsonOrText(pokojeRes);
+            const pokoje = Array.isArray(pokojeData) ? pokojeData : pokojeData?.items || pokojeData?.pokoje || [];
+
+            const getRoomNumber = (p) => {
+                return String((p?.numer_pokoju ?? p?.numer ?? p?.number) ?? '').trim();
+            };
+
+            const inputIsNumber = pokojInput !== '' && !Number.isNaN(Number(pokojInput));
+
+            let pokoj = pokoje.find(p => {
+                const numer = getRoomNumber(p);
+                if (inputIsNumber && numer !== '') {
+                    const numerNum = Number(numer);
+                    if (!Number.isNaN(numerNum)) {
+                        return numerNum === Number(pokojInput);
+                    }
+                }
+                return numer.toLowerCase() === pokojInput.toLowerCase();
+            });
+
+            if (!pokoj && inputIsNumber) {
+                pokoj = pokoje.find(p => String(p?.id ?? '') === String(pokojInput));
+            }
+
+            if (!pokoj) {
+                alert(`Nie znaleziono pokoju o numerze/ID "${pokojInput}". Sprawdź wpis i spróbuj ponownie.`);
+                return;
+            }
+
+            const response = await apiFetch('/usterki', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pokoj_id: Number(pokoj.id),
+                    priorytet: faultForm.priorytet,
+                    opis_usterki: faultForm.opis_usterki.trim(),
+                }),
+            });
+
+            if (!response.ok) {
+                const body = await readJsonOrText(response);
+                alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zgłosić usterki');
+                return;
+            }
+
+            const createdFault = await readJsonOrText(response);
+            setFaults((prev) => [createdFault, ...prev]);
+            setFaultForm((prev) => ({ ...prev, priorytet: '', opis_usterki: '' }));
+            setActiveFaultTab('list');
+            alert('Usterka została zgłoszona.');
+        } catch (err) {
+            console.error('Fault submit error:', err);
+            alert(err.message || 'Nie udało się zgłosić usterki');
+        }
+    };
+
+
+    const handleCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedFault || !commentDraft.trim()) {
+            alert('Wpisz komentarz.');
+            return;
+        }
+        try {
+            const response = await apiFetch(`/komentarze/usterka/${selectedFault.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tresc: commentDraft.trim() }),
+            });
+
+            if (!response.ok) {
+                const body = await readJsonOrText(response);
+                alert(typeof body === 'string' ? body : body?.error || 'Nie udało się dodać komentarza');
+                return;
+            }
+            setCommentDraft('');
+            await loadComments(selectedFault.id);
+        } catch (err) {
+            console.error('Comment submit error:', err);
+            alert(err.message || 'Nie udało się dodać komentarza');
+        }
     };
 
     return (
         <div className="dashboard-wrapper">
-            {/* NAGŁÓWEK */}
-            <header className="dashboard-header">
-                <h1 className="logo-text">Akademik+</h1>
-                <h2 className="welcome-text">Witaj, {mockUserData.name}!</h2>
-            </header>
+            <AppHeader
+                role={currentUserRole || 'Mieszkaniec'}
+                greeting={`Witaj, ${userData.name}!`}
+            />
 
-            {/* GŁÓWNA SIATKA (GRID) */}
+            {error && <div className="error-message" role="alert">{error}</div>}
+            {loading && <div className="loading-message">Ładowanie danych z API...</div>}
+
             <div className="dashboard-grid">
-
-                {/* KOLUMNA 1: Historia opłat */}
                 <div className="card panel-payments">
                     <h3 className="card-title">Historia opłat</h3>
                     <div className="table-container">
@@ -73,42 +269,50 @@ const Dashboard = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {mockPayments.map((payment) => (
+                            {payments.length ? payments.map((payment) => (
                                 <tr key={payment.id}>
-                                    <td>{payment.date}</td>
+                                    <td>{formatDate(payment.date)}</td>
                                     <td>{payment.desc}</td>
                                     <td>{payment.amount} zł</td>
                                     <td>
-                      <span className={`status-badge ${payment.status === 'OPŁACONE' ? 'paid' : 'unpaid'}`}>
-                        {payment.status}
-                      </span>
+                                        <span className={`status-badge ${payment.status === 'OPŁACONE' ? 'paid' : 'unpaid'}`}>
+                                            {payment.status}
+                                        </span>
                                     </td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan="4">{billsMessage || 'Brak rachunków.'}</td>
+                                </tr>
+                            )}
                             </tbody>
                         </table>
                     </div>
-                    <button className="primary-btn mt-auto">Dokonaj płatności</button>
+                    <button className="primary-btn mt-auto" onClick={() => navigate('/history')}>
+                        Zobacz rozliczenia
+                    </button>
                 </div>
 
-                {/* KOLUMNA 2 (GÓRA): Historia zamieszkania */}
                 <div className="card panel-history">
                     <h3 className="card-title">Historia zamieszkania</h3>
                     <div className="timeline">
-                        {mockResidenceHistory.map((item) => (
-                            <div key={item.id} className="timeline-item">
-                                <div className={`timeline-dot ${item.isCurrent ? 'current' : ''}`}></div>
+                        {accommodation ? (
+                            <div className="timeline-item">
+                                <div className="timeline-dot current"></div>
                                 <div className="timeline-content">
-                                    <strong>{item.dorm}</strong><br />
-                                    {item.room}<br />
-                                    <span className="timeline-date">{item.date}</span>
+                                    <strong>{accommodation.akademik_adres || 'Akademik'}</strong><br />
+                                    {`Pokój ${accommodation.numer_pokoju || '-'}`}<br />
+                                    <span className="timeline-date">{`od ${formatDate(accommodation.poczatek_zakwaterowania)}`}</span>
                                 </div>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="timeline-item">
+                                <div className="timeline-content">{accommodationMessage || 'No active accommodation found.'}</div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* KOLUMNA 2 (DÓŁ): Mój pokój */}
                 <div className="card panel-room">
                     <h3 className="card-title">Mój pokój</h3>
                     <div className="room-info">
@@ -116,47 +320,119 @@ const Dashboard = () => {
                             <img src={roomImg} alt="Pokój" className="room-image" />
                         </div>
                         <div className="room-details">
-                            {mockRoomDetails.type},<br />
-                            numer {mockRoomDetails.number},<br />
-                            {mockRoomDetails.dorm}
+                            {accommodation ? (
+                                <>
+                                    Pokój: <strong>{accommodation.numer_pokoju || '-'}</strong><br />
+                                    Wprowadzenie: {formatDate(accommodation.poczatek_zakwaterowania)}<br />
+                                    Koniec umowy: {formatDate(accommodation.koniec_zakwaterowania)}
+                                </>
+                            ) : (
+                                <span>{accommodationMessage || 'No active accommodation found.'}</span>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* KOLUMNA 3: Zgłoszenie usterki */}
                 <div className="card panel-fault">
-                    <h3 className="card-title">Zgłoszenie usterki</h3>
-                    <form className="fault-form" onSubmit={handleFaultSubmit}>
-                        <input
-                            type="text"
-                            placeholder="Podaj numer pokoju"
-                            value={faultForm.roomNumber}
-                            onChange={(e) => setFaultForm({...faultForm, roomNumber: e.target.value})}
-                        />
+                    <h3 className="card-title">Usterki</h3>
+                    <div className="fault-tabs">
+                        <button className={`secondary-btn ${activeFaultTab === 'new' ? 'active' : ''}`} onClick={() => setActiveFaultTab('new')}>
+                            Zgłoś
+                        </button>
+                        <button className={`secondary-btn ${activeFaultTab === 'list' ? 'active' : ''}`} onClick={() => setActiveFaultTab('list')}>
+                            Moje zgłoszenia
+                        </button>
+                    </div>
 
-                        <select
-                            value={faultForm.category}
-                            onChange={(e) => setFaultForm({...faultForm, category: e.target.value})}
-                        >
-                            <option value="" disabled>Wybierz kategorię usterki</option>
-                            <option value="hydraulika">Hydraulika</option>
-                            <option value="elektryka">Elektryka</option>
-                            <option value="meble">Meble/Wyposażenie</option>
-                            <option value="inne">Inne</option>
-                        </select>
+                    {activeFaultTab === 'new' ? (
+                        <form className="fault-form" onSubmit={handleFaultSubmit}>
+                            <input
+                                type="text"
+                                placeholder="Numer pokoju (np. 101)"
+                                value={faultForm.pokoj_numer}
+                                onChange={(e) => setFaultForm({ ...faultForm, pokoj_numer: e.target.value })}
+                                disabled={!!accommodation && !accommodation.numer_pokoju ? true : false}
+                            />
 
-                        <textarea
-                            placeholder="Opisz usterkę"
-                            rows="8"
-                            value={faultForm.description}
-                            onChange={(e) => setFaultForm({...faultForm, description: e.target.value})}
-                        ></textarea>
+                            <select
+                                value={faultForm.priorytet}
+                                onChange={(e) => setFaultForm({ ...faultForm, priorytet: e.target.value })}
+                            >
+                                <option value="" disabled>Wybierz kategorię usterki</option>
+                                <option value="BardzoPilne">Bardzo pilne</option>
+                                <option value="Pilne">Pilne</option>
+                                <option value="Normalny">Normalny</option>
+                                <option value="MozePoczekac">Może poczekać</option>
+                            </select>
 
-                        <button type="submit" className="primary-btn mt-auto">Zgłoś usterkę</button>
-                    </form>
+                            <textarea
+                                placeholder="Opisz usterkę"
+                                value={faultForm.opis_usterki}
+                                onChange={(e) => setFaultForm({ ...faultForm, opis_usterki: e.target.value })}
+                            ></textarea>
+
+                            <button type="submit" className="primary-btn mt-auto">Zgłoś usterkę</button>
+                        </form>
+                    ) : (
+                        <div className="faults-list resident-faults-list">
+                            {faults.length ? faults.map((fault) => (
+                                <div
+                                    key={fault.id}
+                                    className="fault-item"
+                                    onDoubleClick={() => openFaultDetails(fault)}
+                                    title="Kliknij dwa razy, aby otworzyć szczegóły i czat"
+                                >
+                                    <strong>#{fault.id}</strong> • {fault.status}<br />
+                                    <span>{fault.opis_usterki}</span>
+                                </div>
+                            )) : <div className="fault-item">Brak zgłoszonych usterek.</div>}
+                        </div>
+                    )}
                 </div>
-
             </div>
+
+            {selectedFault && (
+                <div className="admin-modal-overlay" onClick={() => setSelectedFault(null)}>
+                    <div className="admin-modal-content fault-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Szczegóły usterki #{selectedFault.id}</h2>
+                        <p><strong>Status:</strong> {selectedFault.status}</p>
+                        <p><strong>Priorytet:</strong> {selectedFault.priorytet || '-'}</p>
+                        <p><strong>Opis:</strong> {selectedFault.opis_usterki || '-'}</p>
+                        <p><strong>Data zgłoszenia:</strong> {formatDate(selectedFault.data_zgloszenia)}</p>
+
+                        <h3 className="chat-title">Czat usterki</h3>
+                        <div className="fault-chat-timeline">
+                            {commentsLoading ? <div>Ładowanie czatu...</div> : null}
+                            {!commentsLoading && !faultComments.length ? <div>Brak komentarzy.</div> : null}
+                            {faultComments.map((comment) => {
+                                const isAdmin = (comment.autor_rola || '').toLowerCase().includes('admin');
+                                return (
+                                    <div key={comment.id} className={`chat-message ${isAdmin ? 'admin' : 'resident'}`}>
+                                        <div className="chat-meta">
+                                            <strong>{comment.autor_nazwa || `Użytkownik ${comment.autor_id}`}</strong>
+                                            <span>{formatDate(comment.data_dodania)}</span>
+                                        </div>
+                                        <div>{comment.tresc}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <form className="chat-form" onSubmit={handleCommentSubmit}>
+                            <textarea
+                                rows="3"
+                                value={commentDraft}
+                                onChange={(e) => setCommentDraft(e.target.value)}
+                                placeholder="Napisz wiadomość..."
+                            />
+                            <div className="modal-buttons">
+                                <button type="button" className="cancel-btn" onClick={() => setSelectedFault(null)}>Zamknij</button>
+                                <button type="submit" className="confirm-btn">Wyślij</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
