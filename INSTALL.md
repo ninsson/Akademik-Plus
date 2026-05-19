@@ -6,7 +6,7 @@
 
 2. Przygotowanie — plik `.env`
    Skopiuj plik `.env.example` do folderu `infrastructure/docker/` (lub ustaw zmienne środowiskowe). Następnie uzupełnij
-   ten plik zgodnie z własnymi założeniami. DOmyślnie wypełniony plik będzie działać, choć stanowczo zalecane jest
+   ten plik zgodnie z własnymi założeniami. Domyślnie wypełniony plik będzie działać, choć stanowczo zalecane jest
    wprowadzenie zmian w celu zabezpieczenia aplikacji.
 
 3. Uruchomienie projektu
