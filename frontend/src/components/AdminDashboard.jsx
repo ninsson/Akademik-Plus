@@ -236,6 +236,20 @@ const AdminDashboard = () => {
         }
     };
 
+    const refreshStats = async () => {
+        try {
+            const res = await apiFetch('/statystyki');
+            if (!res.ok) {
+                console.warn('Nie udało się odświeżyć statystyk:', res.status);
+                return;
+            }
+            const data = await readJsonOrText(res);
+            setStats(normalizeStats(data));
+        } catch (err) {
+            console.warn('refreshStats error:', err);
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
 
@@ -318,7 +332,7 @@ const AdminDashboard = () => {
             alert(typeof body === 'string' ? body : body?.error || 'Nie udało się zaktualizować statusu usterki.');
             return;
         }
-
+        await refreshStats();
         setFaults((prev) => prev.map((fault) => (fault.id === selectedFault.id ? { ...fault, status: faultStatus } : fault)));
         setSelectedFault((prev) => (prev ? { ...prev, status: faultStatus } : prev));
     };
@@ -407,6 +421,7 @@ const AdminDashboard = () => {
             return;
         }
         setRooms((prev) => prev.map((room) => (room.id === roomId ? { ...room, status_pokoju: roomStatusDraft[roomId] } : room)));
+        await refreshStats();
         setSuccessMessage('Status pokoju został zaktualizowany.');
     };
 
@@ -429,6 +444,7 @@ const AdminDashboard = () => {
             return;
         }
         await loadRooms();
+        await refreshStats();
         setRoomForm({ numer_pokoju: '', ile_osob: '2', pietro: '1', akademik_id: '1', status_pokoju: 'Dostepny' });
         setSuccessMessage(`Pokój ${roomForm.numer_pokoju} został dodany.`);
     };
@@ -442,6 +458,7 @@ const AdminDashboard = () => {
             return;
         }
         await loadRooms();
+        await refreshStats();
         setSuccessMessage(`Pokój ${room.numer_pokoju} został usunięty.`);
     };
 
@@ -467,6 +484,7 @@ const AdminDashboard = () => {
             return;
         }
         await Promise.all([loadAccommodations(), loadRooms()]);
+        await refreshStats(); // odświeżamy zajętość itp.
         setAccommodationForm({ mieszkaniec_id: '', pokoj_id: '', poczatek_zakwaterowania: '', koniec_zakwaterowania: '' });
         setResidentSearch('');
         setSuccessMessage('Zakwaterowanie zostało przypisane.');
@@ -485,6 +503,7 @@ const AdminDashboard = () => {
             return;
         }
         await Promise.all([loadAccommodations(), loadRooms()]);
+        await refreshStats();
         setCheckoutForm({ id: '', koniec_zakwaterowania: '' });
         setSuccessMessage('Wymeldowanie zostało zapisane.');
     };
