@@ -3,7 +3,7 @@
 System zarządzania akademikiem — narzędzie wspierające administrację w przydzielaniu pokoi, prowadzeniu ewidencji
 mieszkańców, rozliczaniu opłat oraz obsłudze zgłoszeń usterek.
 
-Główne cele projektu:
+## Główne cele projektu:
 
 - Zarządzanie pokojami i miejscami (liczba miejsc, wyposażenie, status dostępności).
 - Rejestracja mieszkańców i historia zakwaterowań.
@@ -12,7 +12,7 @@ Główne cele projektu:
 - Zgłaszanie usterek i komunikacja mieszkańców z administracją.
 - Role użytkowników: student (mieszkaniec) i administracja (administrator), z różnymi uprawnieniami.
 
-Spis treści
+## Spis treści
 
 - Funkcje
 - Architektura
@@ -21,14 +21,14 @@ Spis treści
 - Kontakt
 - Licencja
 
-Funkcje
+### Funkcje
 
 - Panel administracyjny: zestawienia wolnych miejsc, raporty obłożenia, statystyki.
 - Panel mieszkańca: zgłaszanie usterek, przegląd historii opłat i zamieszkania.
 - Mechanizmy autoryzacji i ról (JWT).
 - API REST dla operacji CRUD na pokojach, użytkownikach, usterkach, rachunkach i zakwaterowaniach.
 
-Architektura
+### Architektura
 
 - Backend: Go
     - Serwer HTTP nasłuchuje na porcie `8000` (domyślnie).
@@ -37,21 +37,21 @@ Architektura
 - Baza danych: PostgreSQL (pliki inicjalizujące znajdują się w `infrastructure/docker/init.sql`).
 - Docker: Pliki `Dockerfile` dla backendu i frontendu oraz `infrastructure/docker/docker-compose.yml`.
 
-Szybki start
+### Szybki start
 Zobacz szczegółową instrukcję instalacji i uruchomienia w `INSTALL.md` w katalogu głównym repozytorium:
 
 - `INSTALL.md` — krok po kroku: wymagania, konfiguracja `.env`, uruchomienie bazy, backendu i frontendu oraz sposób
   uruchomienia za pomocą Docker Compose.
 
-Wprowadzanie zmian do projektu
+### Wprowadzanie zmian do projektu
 
 - Zgłaszaj pull requesty i issue w repozytorium.
 - Przed wysłaniem PR upewnij się, że zmiany są przetestowane lokalnie.
 
-Kontakt
+### Kontakt
 
 - W razie pytań zostaw issue w repo.
 
-Licencja
+### Licencja
 
 - Projekt zawiera plik `LICENSE` w katalogu głównym.
