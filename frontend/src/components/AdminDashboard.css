@@ -477,3 +477,21 @@
     color: #475569;
     margin-bottom: 6px;
 }
+
+/* Small search input used to filter long lists inside modals */
+.list-search {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+/* Visual helper showing the currently selected resident under the datalist */
+.selected-resident {
+    font-size: 0.9rem;
+    color: #1b0a5a;
+    margin: 6px 0 4px 0;
+}

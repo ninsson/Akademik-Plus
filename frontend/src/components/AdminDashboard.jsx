@@ -93,6 +93,10 @@ const AdminDashboard = () => {
     });
     const [checkoutForm, setCheckoutForm] = useState({ id: '', koniec_zakwaterowania: '' });
     const [residentSearch, setResidentSearch] = useState('');
+    const [userFilter, setUserFilter] = useState('');
+    const [roomFilter, setRoomFilter] = useState('');
+    const [accommodationFilter, setAccommodationFilter] = useState('');
+    const [faultFilter, setFaultFilter] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
     const [startDate, setStartDate] = useState('');
@@ -103,6 +107,11 @@ const AdminDashboard = () => {
 
     const totalDebt = stats.nieoplacone_rachunki;
     const residentUsers = useMemo(() => users.filter((user) => user.rola === 'Mieszkaniec'), [users]);
+    const filteredUsers = useMemo(() => {
+        const q = userFilter.trim().toLowerCase();
+        if (!q) return users;
+        return users.filter((u) => (`${u.imie} ${u.nazwisko} ${u.email} ${u.numer_telefonu || ''}`.toLowerCase().includes(q)));
+    }, [users, userFilter]);
     const occupiedRoomIds = useMemo(() => {
         const now = new Date();
         return new Set(accommodations.filter((item) => new Date(item.koniec_zakwaterowania) >= now).map((item) => item.pokoj_id));
@@ -111,6 +120,21 @@ const AdminDashboard = () => {
         () => rooms.filter((room) => room.status_pokoju === 'Dostepny' && !occupiedRoomIds.has(room.id)),
         [rooms, occupiedRoomIds],
     );
+    const filteredRooms = useMemo(() => {
+        const q = roomFilter.trim().toLowerCase();
+        if (!q) return rooms;
+        return rooms.filter((r) => (`${r.numer_pokoju} ${r.ile_osob} ${r.pietro} ${r.status_pokoju}`.toLowerCase().includes(q)));
+    }, [rooms, roomFilter]);
+    const filteredAccommodations = useMemo(() => {
+        const q = accommodationFilter.trim().toLowerCase();
+        if (!q) return accommodations;
+        return accommodations.filter((a) => (`${a.mieszkaniec_nazwa || a.mieszkaniec_id} ${a.numer_pokoju || a.pokoj_id}`.toLowerCase().includes(q)));
+    }, [accommodations, accommodationFilter]);
+    const filteredFaults = useMemo(() => {
+        const q = faultFilter.trim().toLowerCase();
+        if (!q) return faults;
+        return faults.filter((f) => (`${f.opis_usterki || ''} ${f.pokoj_id || ''} ${f.status || ''}`.toLowerCase().includes(q)));
+    }, [faults, faultFilter]);
 
     const lineData = useMemo(() => {
         const total = Math.max(stats.wszystkie_pokoje, 1);
@@ -532,8 +556,9 @@ const AdminDashboard = () => {
 
                 <div className="admin-card faults-card">
                     <h3 className="card-title">Lista usterek</h3>
+                    <input className="list-search" placeholder="Szukaj usterek (pokój, opis, status)" value={faultFilter} onChange={(e) => setFaultFilter(e.target.value)} />
                     <div className="faults-list">
-                        {faults.length ? faults.map((fault) => (
+                        {filteredFaults.length ? filteredFaults.map((fault) => (
                             <div
                                 key={fault.id}
                                 className="fault-item"
@@ -693,8 +718,9 @@ const AdminDashboard = () => {
                             </select>
                             <button className="confirm-btn" type="submit">Dodaj użytkownika</button>
                         </form>
+                        <input className="list-search" placeholder="Szukaj użytkowników (imię, nazwisko, email)" value={userFilter} onChange={(e) => setUserFilter(e.target.value)} />
                         <div className="table-like-list">
-                            {users.map((user) => (
+                            {filteredUsers.map((user) => (
                                 <div className="list-row" key={user.id}>
                                     <div className="list-main">
                                         <strong>{user.imie} {user.nazwisko}</strong><br />
@@ -766,8 +792,9 @@ const AdminDashboard = () => {
                             </select>
                             <button className="confirm-btn" type="submit">Dodaj pokój</button>
                         </form>
+                        <input className="list-search" placeholder="Szukaj pokoi (numer, piętro, status)" value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} />
                         <div className="table-like-list">
-                            {rooms.map((room) => (
+                            {filteredRooms.map((room) => (
                                 <div className="list-row" key={room.id}>
                                     <div className="list-main">
                                         <strong>Pokój {room.numer_pokoju}</strong><br />
@@ -867,8 +894,9 @@ const AdminDashboard = () => {
                              <button className="confirm-btn" type="submit">Wymelduj</button>
                         </form>
 
+                        <input className="list-search" placeholder="Szukaj zakwaterowań (mieszkaniec, pokój)" value={accommodationFilter} onChange={(e) => setAccommodationFilter(e.target.value)} />
                         <div className="table-like-list">
-                            {accommodations.map((item) => (
+                            {filteredAccommodations.map((item) => (
                                 <div className="list-row" key={item.id}>
                                     <div>
                                         <strong>#{item.id} • Pokój {item.numer_pokoju || item.pokoj_id}</strong><br />
@@ -881,12 +909,12 @@ const AdminDashboard = () => {
                             ))}
                         </div>
 
-                        <div className="modal-buttons">
-                            <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                         <div className="modal-buttons">
+                             <button type="button" className="cancel-btn" onClick={closeModal}>Zamknij</button>
+                         </div>
+                     </div>
+                 </div>
+             )}
         </div>
     );
 };
