@@ -2,7 +2,7 @@
 
 1. Wymagania wstępne
 
-- Docker & Docker Compose (opcjonalnie) — do automatycznego uruchomienia całego projektu.
+- Docker & Docker Compose  — do automatycznego uruchomienia całego projektu.
 
 2. Przygotowanie — plik `.env`
    Skopiuj plik `.env.example` do folderu `infrastructure/docker/` (w tym folderze znajduje się też przykładowy plik `.env.example`). Następnie uzupełnij
