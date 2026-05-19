@@ -55,6 +55,6 @@ curl -I http://localhost:8000
 5. Najczęstsze problemy i wskazówki
 
 - Błąd połączenia z bazą: sprawdź, czy pola `DB_HOST/DB_PORT` w `.env` wskazują poprawny host i port serwera baz danych.
-  Jeśli baza została uruchomiona z pomocą Docker Compose, `DB_HOST` domslnie powinno być ustawione na `postgres`.
+  Jeśli baza została uruchomiona z pomocą Docker Compose, `DB_HOST` domyślnie powinno być ustawione na `postgres`.
 - Brak JWT_SECRET: Należy sprawdzić czy pole `JWT_SECRET` w pliku `.env` wskazuje na poprawny klucz JWT.
 
