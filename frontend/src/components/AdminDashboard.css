@@ -432,3 +432,36 @@
     color: #166534;
     border: 1px solid #86efac;
 }
+
+/* Resident search input: hide native dropdown/arrow/clear to avoid confusing icon next to datalist */
+.resident-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 10px; /* avoid overlap with native icons when present */
+}
+
+/* WebKit: remove search/cancel buttons and spinner */
+.resident-input::-webkit-search-decoration,
+.resident-input::-webkit-search-cancel-button,
+.resident-input::-webkit-search-results-button,
+.resident-input::-webkit-search-results-decoration,
+.resident-input::-webkit-outer-spin-button,
+.resident-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+/* IE/Edge */
+.resident-input::-ms-clear,
+.resident-input::-ms-expand {
+    display: none;
+}
+
+/* Firefox - disable inner focus outline if any unusual appearance */
+.resident-input:-moz-focusring {
+    outline: none;
+}

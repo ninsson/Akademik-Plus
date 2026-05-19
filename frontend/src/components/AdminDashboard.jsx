@@ -801,6 +801,7 @@ const AdminDashboard = () => {
                         <h2>Zarządzanie zakwaterowaniami</h2>
                         <form onSubmit={handleCreateAccommodation} className="modal-form-grid">
                             <input
+                                className="resident-input"
                                 list="resident-options"
                                 placeholder="Wyszukaj mieszkańca (imię, nazwisko, email)"
                                 value={residentSearch}
