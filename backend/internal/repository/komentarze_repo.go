@@ -25,7 +25,10 @@ func (r *KomentarzeRepo) Create(k *models.KomentarzUsterki) error {
 	}
 	defer rows.Close()
 	if rows.Next() {
-		err = rows.StructScan(k)
+		return rows.StructScan(k)
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 	return err
 }
