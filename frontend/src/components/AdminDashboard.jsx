@@ -438,7 +438,24 @@ const AdminDashboard = () => {
 
     const handleResidentInputChange = (value) => {
         setResidentSearch(value);
-        const selected = residentUsers.find((user) => residentOptionLabel(user) === value);
+        // Try several matching strategies to be tolerant of browser/datalist behavior
+        let selected = residentUsers.find((user) => residentOptionLabel(user) === value);
+        if (!selected) {
+            // If user typed or selected the label which includes email in parentheses, try to extract email
+            const emailMatch = String(value).match(/\(([^)]+)\)\s*$/);
+            if (emailMatch) {
+                const email = emailMatch[1];
+                selected = residentUsers.find((u) => String(u.email) === email);
+            }
+        }
+        if (!selected && value) {
+            // fallback: try case-insensitive startsWith or contains match on the label
+            const v = String(value).toLowerCase();
+            selected = residentUsers.find((u) => residentOptionLabel(u).toLowerCase().startsWith(v));
+            if (!selected) {
+                selected = residentUsers.find((u) => residentOptionLabel(u).toLowerCase().includes(v));
+            }
+        }
         setAccommodationForm((prev) => ({ ...prev, mieszkaniec_id: selected ? String(selected.id) : '' }));
     };
 
@@ -794,6 +811,15 @@ const AdminDashboard = () => {
                                     <option key={user.id} value={residentOptionLabel(user)} />
                                 ))}
                             </datalist>
+                            {/* Visual feedback: show selected resident (ID and name) so admin knows selection worked */}
+                            <div className="selected-resident">
+                                {accommodationForm.mieszkaniec_id
+                                    ? (() => {
+                                        const sel = residentUsers.find((u) => String(u.id) === String(accommodationForm.mieszkaniec_id));
+                                        return sel ? `Wybrano: #${sel.id} • ${sel.imie} ${sel.nazwisko} (${sel.email})` : `Wybrano: ID ${accommodationForm.mieszkaniec_id}`;
+                                    })()
+                                    : 'Nie wybrano mieszkańca.'}
+                            </div>
                             <select
                                 required
                                 value={accommodationForm.pokoj_id}
