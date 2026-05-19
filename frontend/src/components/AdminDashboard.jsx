@@ -114,31 +114,53 @@ const AdminDashboard = () => {
         termin_do_zaplacenia: '',
         data_wystawienia: '',
     });
+
     const totalDebt = stats.nieoplacone_rachunki;
+
     const residentUsers = useMemo(() => users.filter((user) => user.rola === 'Mieszkaniec'), [users]);
     const filteredUsers = useMemo(() => {
         const q = userFilter.trim().toLowerCase();
         if (!q) return users;
         return users.filter((u) => (`${u.imie} ${u.nazwisko} ${u.email} ${u.numer_telefonu || ''}`.toLowerCase().includes(q)));
     }, [users, userFilter]);
+
     const occupiedRoomIds = useMemo(() => {
         const now = new Date();
-        return new Set(accommodations.filter((item) => new Date(item.koniec_zakwaterowania) >= now).map((item) => item.pokoj_id));
+        return new Set(
+            (accommodations || [])
+                .filter((item) => {
+                    try {
+                        const start = item.poczatek_zakwaterowania ? new Date(item.poczatek_zakwaterowania) : null;
+                        const end = item.koniec_zakwaterowania ? new Date(item.koniec_zakwaterowania) : null;
+                        if (!end) return false;
+                        // jeśli mamy start, sprawdzamy czy start <= now <= end, jeśli nie mamy start - sprawdzamy tylko end >= now
+                        if (start) return start <= now && now <= end;
+                        return now <= end;
+                    } catch {
+                        return false;
+                    }
+                })
+                .map((item) => item.pokoj_id)
+        );
     }, [accommodations]);
+
     const availableRooms = useMemo(
         () => rooms.filter((room) => room.status_pokoju === 'Dostepny' && !occupiedRoomIds.has(room.id)),
         [rooms, occupiedRoomIds],
     );
+
     const filteredRooms = useMemo(() => {
         const q = roomFilter.trim().toLowerCase();
         if (!q) return rooms;
         return rooms.filter((r) => (`${r.numer_pokoju} ${r.ile_osob} ${r.pietro} ${r.status_pokoju}`.toLowerCase().includes(q)));
     }, [rooms, roomFilter]);
+
     const filteredAccommodations = useMemo(() => {
         const q = accommodationFilter.trim().toLowerCase();
         if (!q) return accommodations;
         return accommodations.filter((a) => (`${a.mieszkaniec_nazwa || a.mieszkaniec_id} ${a.numer_pokoju || a.pokoj_id}`.toLowerCase().includes(q)));
     }, [accommodations, accommodationFilter]);
+
     const filteredFaults = useMemo(() => {
         const q = faultFilter.trim().toLowerCase();
         if (!q) return faults;
@@ -174,12 +196,37 @@ const AdminDashboard = () => {
     }, [stats]);
 
     const barData = useMemo(() => {
-        const total = Math.max(stats.wszystkie_pokoje, 1);
-        return [
-            { name: 'Pokoje zajęte', usage: Math.round((stats.zajete_pokoje / total) * 100) },
-            { name: 'Pokoje wolne', usage: Math.round(((total - stats.zajete_pokoje) / total) * 100) },
-        ];
-    }, [stats]);
+        if (!rooms || rooms.length === 0) return [];
+
+        const statsByCapacity = {};
+
+        rooms.forEach((room) => {
+            const capacity = Number(room.ile_osob) || 0;
+            if (!statsByCapacity[capacity]) statsByCapacity[capacity] = { total: 0, occupied: 0 };
+            statsByCapacity[capacity].total += 1;
+
+            if (room.id != null && occupiedRoomIds.has(room.id)) {
+                statsByCapacity[capacity].occupied += 1;
+            } else {
+                const status = (room.status_pokoju || '').toLowerCase();
+                if (status === 'zajety' || status === 'zajęty' || status === 'zajete' || status === 'zajęte') {
+                    statsByCapacity[capacity].occupied += 1;
+                }
+            }
+        });
+
+        return Object.entries(statsByCapacity)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([capacity, { total, occupied }]) => {
+                const usage = total > 0 ? Math.round((occupied / total) * 100) : 0;
+                return {
+                    name: `${capacity}-osob.`,
+                    usage,
+                    total,
+                    occupied,
+                };
+            });
+    }, [rooms, occupiedRoomIds]);
 
     const loadFaultComments = async (faultId) => {
         const response = await apiFetch(`/komentarze/usterka/${faultId}`);
@@ -199,11 +246,12 @@ const AdminDashboard = () => {
     };
 
     const loadMainData = async () => {
-        // pobieramy statystyki, usterki i pokoje równolegle
-        const [statsRes, faultsRes, roomsRes] = await Promise.all([
+        // pobieramy statystyki, usterki, pokoje i zakwaterowania równolegle
+        const [statsRes, faultsRes, roomsRes, accommodationsRes] = await Promise.all([
             apiFetch('/statystyki'),
             apiFetch('/usterki'),
             apiFetch('/pokoje'),
+            apiFetch('/zakwaterowania'),
         ]);
 
         if (!statsRes.ok) {
@@ -226,6 +274,21 @@ const AdminDashboard = () => {
             }
         } else {
             setRooms((prev) => prev || []);
+        }
+
+        // ustaw accommodations jeśli udało się pobrać
+        let accommodationsList = [];
+        if (accommodationsRes && accommodationsRes.ok) {
+            try {
+                const accommodationsData = await readJsonOrText(accommodationsRes);
+                accommodationsList = Array.isArray(accommodationsData) ? accommodationsData : accommodationsData?.items || [];
+                setAccommodations(accommodationsList);
+            } catch (err) {
+                console.warn('Nie udało się sparsować listy zakwaterowań:', err);
+                setAccommodations([]);
+            }
+        } else {
+            setAccommodations((prev) => prev || []);
         }
 
         if (faultsRes.ok) {
@@ -529,10 +592,8 @@ const AdminDashboard = () => {
 
     const handleResidentInputChange = (value) => {
         setResidentSearch(value);
-        // Try several matching strategies to be tolerant of browser/datalist behavior
         let selected = residentUsers.find((user) => residentOptionLabel(user) === value);
         if (!selected) {
-            // If user typed or selected the label which includes email in parentheses, try to extract email
             const emailMatch = String(value).match(/\(([^)]+)\)\s*$/);
             if (emailMatch) {
                 const email = emailMatch[1];
@@ -540,7 +601,6 @@ const AdminDashboard = () => {
             }
         }
         if (!selected && value) {
-            // fallback: try case-insensitive startsWith or contains match on the label
             const v = String(value).toLowerCase();
             selected = residentUsers.find((u) => residentOptionLabel(u).toLowerCase().startsWith(v));
             if (!selected) {
@@ -576,6 +636,19 @@ const AdminDashboard = () => {
         pdf.text(`Otwarte usterki: ${stats.otwarte_usterki}`, 20, 86);
         pdf.save(`Raport_${startDate}_${endDate}.pdf`);
     };
+    
+    const CapacityTooltip = ({ active, payload, label }) => {
+        if (!active || !payload || !payload.length) return null;
+        const data = payload[0].payload;
+        if (!data) return null;
+        return (
+            <div className="custom-tooltip" style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', fontSize: '13px', color: '#1b0a5a' }}>
+                <div style={{ fontWeight: 700, marginBottom: '6px' }}>Pokój {label}</div>
+                <div>Zajęte: <strong>{data.occupied}</strong> / {data.total}</div>
+                <div style={{ marginTop: '2px' }}>Wykorzystanie: <strong>{data.usage}%</strong></div>
+            </div>
+        );
+    };
 
     return (
         <div className="admin-wrapper">
@@ -593,9 +666,7 @@ const AdminDashboard = () => {
                             <LineChart data={lineData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} tickMargin={10} />
-                                {/* Usunięto tickFormatter z procentami */}
                                 <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
-                                {/* Usunięto formatter z procentami */}
                                 <Tooltip />
                                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
 
@@ -651,7 +722,7 @@ const AdminDashboard = () => {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
                                     <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(tick) => `${tick}%`} />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} formatter={(value) => `${value}%`} />
+                                    <Tooltip content={<CapacityTooltip />} cursor={{ fill: '#f8fafc' }} />
                                     <Bar dataKey="usage" fill={COLORS.free} radius={[4, 4, 0, 0]} barSize={30} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -912,7 +983,6 @@ const AdminDashboard = () => {
                                     <option key={user.id} value={residentOptionLabel(user)} />
                                 ))}
                             </datalist>
-                            {/* Visual feedback: show selected resident (ID and name) so admin knows selection worked */}
                             <div className="selected-resident">
                                 {accommodationForm.mieszkaniec_id
                                     ? (() => {
@@ -988,6 +1058,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+
             {activeBillModal && (
                 <div className="admin-modal-overlay" onClick={() => setActiveBillModal(false)}>
                     <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
