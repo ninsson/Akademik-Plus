@@ -226,3 +226,16 @@ func (h *UzytkownicyHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "uzytkownik usuniety"})
 }
+
+func (h *UzytkownicyHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidlowe dane")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Jeśli konto z podanym adresem istnieje, otrzymasz instrukcję na e-mail.",
+	})
+}

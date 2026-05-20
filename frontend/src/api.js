@@ -55,3 +55,17 @@ export async function changeMyPassword(oldPassword, newPassword, confirm) {
     }
     return body;
 }
+
+export async function requestPasswordReset(email) {
+    if (!email || !email.includes('@')) throw new Error('Podaj poprawny adres e-mail');
+    const res = await apiFetch('/uzytkownicy/reset-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const body = await readJsonOrText(res);
+    if (!res.ok) {
+        throw new Error(typeof body === 'string' ? body : body?.error || `Status ${res.status}`);
+    }
+    return body;
+}
