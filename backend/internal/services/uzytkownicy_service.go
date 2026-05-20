@@ -93,3 +93,59 @@ func (s *UzytkownicyService) Delete(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+func (s *UzytkownicyService) ChangeOwnPassword(ctx context.Context, id int, oldPassword, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("password must be at least 6 characters long")
+	}
+
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword)); err != nil {
+		return errors.New("invalid old password")
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	rows, err := s.repo.UpdatePassword(ctx, id, string(hashed))
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// AdminChangePassword - admin zmienia/ustawia nowe hasło dla dowolnego użytkownika (bez starego hasła)
+func (s *UzytkownicyService) AdminChangePassword(ctx context.Context, id int, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("password must be at least 6 characters long")
+	}
+
+	// opcjonalnie sprawdź istnienie użytkownika
+	_, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	rows, err := s.repo.UpdatePassword(ctx, id, string(hashed))
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

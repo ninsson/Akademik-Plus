@@ -67,6 +67,14 @@ func (r *UzytkownicyRepo) UpdateRole(ctx context.Context, id int, rola models.Ro
 	return res.RowsAffected()
 }
 
+func (r *UzytkownicyRepo) UpdatePassword(ctx context.Context, id int, passwordHash string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, "UPDATE uzytkownicy SET password_hash = $1 WHERE id = $2", passwordHash, id)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 func (r *UzytkownicyRepo) Delete(ctx context.Context, id int) (int64, error) {
 	res, err := r.db.ExecContext(ctx, "DELETE FROM uzytkownicy WHERE id = $1", id)
 	if err != nil {
