@@ -9,6 +9,7 @@ import (
 
 	"akademik/internal/models"
 	"akademik/internal/services"
+
 	"github.com/lib/pq"
 )
 
@@ -41,6 +42,8 @@ func (h *PokojeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p.NumerPokoju = strings.TrimSpace(p.NumerPokoju)
+
 	if strings.TrimSpace(p.NumerPokoju) == "" {
 		http.Error(w, "numer_pokoju is required", http.StatusBadRequest)
 		return
@@ -67,10 +70,21 @@ func (h *PokojeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	id, err := h.svc.Create(r.Context(), &p)
 	if err != nil {
 		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-			http.Error(w, "Invalid akademik_id", http.StatusBadRequest)
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				http.Error(w, "Invalid akademik_id", http.StatusBadRequest)
+				return
+			}
+			if pqErr.Code == "23505" {
+				http.Error(w, "Pokój o takim numerze już istnieje w tym akademiku", http.StatusConflict)
+				return
+			}
+		}
+		if errors.Is(err, services.ErrAlreadyExists) {
+			http.Error(w, "Pokój o takim numerze już istnieje w tym akademiku", http.StatusConflict)
 			return
 		}
+
 		http.Error(w, "Failed to create pokoj", http.StatusInternalServerError)
 		return
 	}

@@ -78,3 +78,12 @@ func (r *PokojeRepo) UpdateStatus(ctx context.Context, id int, status models.Sta
 	}
 	return res.RowsAffected()
 }
+
+func (r *PokojeRepo) ExistsByNumberAndAkademik(ctx context.Context, akademikID int, numer string) (bool, error) {
+	var count int
+	query := `SELECT COUNT(1) FROM pokoj WHERE akademik_id = $1 AND lower(numer_pokoju) = lower($2)`
+	if err := r.db.GetContext(ctx, &count, query, akademikID, numer); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

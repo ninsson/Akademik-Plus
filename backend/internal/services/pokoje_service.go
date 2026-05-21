@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"akademik/internal/models"
 	"akademik/internal/repository"
 )
 
 var ErrNotFound = sql.ErrNoRows
+var ErrAlreadyExists = errors.New("pokoj o takim numerze juz istnieje w podanym akademiku")
 
 type PokojeService interface {
 	GetAll(ctx context.Context) ([]models.Pokoj, error)
@@ -31,6 +33,16 @@ func (s *pokojeService) GetAll(ctx context.Context) ([]models.Pokoj, error) {
 }
 
 func (s *pokojeService) Create(ctx context.Context, p *models.Pokoj) (int, error) {
+	p.NumerPokoju = strings.TrimSpace(p.NumerPokoju)
+	
+	exists, err := s.repo.ExistsByNumberAndAkademik(ctx, p.AkademikID, p.NumerPokoju)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, ErrAlreadyExists
+	}
+
 	return s.repo.Create(ctx, p)
 }
 
