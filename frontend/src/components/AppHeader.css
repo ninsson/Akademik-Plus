@@ -65,3 +65,133 @@
         margin-top: 6px;
     }
 }
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 24px;
+    width: 380px;
+    max-width: calc(100% - 32px);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #1b0a5a;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #7b8390;
+}
+
+/* Główne style dla inputów w modalu (zaokrąglone, z błękitnym tłem) */
+.modal-content input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #eff4fa; /* Lekko błękitne tło jak na screenie */
+    color: #1a0a53;
+    font-size: 14px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: #1a0a53;
+    background-color: #ffffff;
+}
+
+/* Marginesy modala dla inputa teraz kontroluje ten wrapper */
+.modal-content .password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 12px;
+}
+
+.modal-content .password-wrapper input {
+    width: 100%;
+    padding: 10px 40px 10px 12px; /* Ważne: 40px z prawej na ikonę oczka */
+    margin: 0; /* Resetujemy margines, bo przejmuje go .password-wrapper */
+}
+
+/* Oczko do hasła */
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7b8390;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.password-toggle:hover {
+    opacity: 0.8;
+    color: #1b0a5a;
+}
+
+.password-toggle:focus {
+    outline: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Przycisk główny (Zmień hasło) */
+.primary-btn {
+    background-color: #1b0a5a;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+    background-color: #120640;
+}
+
+.primary-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-error {
+    color: #b91c1c;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}

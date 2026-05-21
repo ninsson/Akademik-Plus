@@ -75,6 +75,8 @@ func main() {
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(uzytkownicyHandler.Delete)),
 	))
 	mux.HandleFunc("POST /uzytkownicy", uzytkownicyHandler.Create)
+	mux.Handle("PATCH /uzytkownicy/haslo", middleware.JWTMiddleware(http.HandlerFunc(uzytkownicyHandler.ChangePassword)))
+	mux.HandleFunc("POST /uzytkownicy/reset-request", uzytkownicyHandler.RequestPasswordReset)
 
 	pokojeRepo := repository.NewPokojeRepo(db)
 	pokojeService := services.NewPokojeService(pokojeRepo)

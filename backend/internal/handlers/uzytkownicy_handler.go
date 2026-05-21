@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"akademik/internal/middleware"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 
 	"akademik/internal/models"
 	"akademik/internal/services"
+
 	"github.com/lib/pq"
 )
 
@@ -105,6 +107,59 @@ func (h *UzytkownicyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(nowy)
 }
 
+func (h *UzytkownicyHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Stare         string `json:"stare_haslo"`
+		Nowe          string `json:"nowe_haslo"`
+		Potwierdzenie string `json:"potwierdzenie"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidlowe dane")
+		return
+	}
+	if payload.Nowe != payload.Potwierdzenie {
+		writeError(w, http.StatusBadRequest, "hasła nie są zgodne")
+		return
+	}
+
+	userIDval := r.Context().Value(middleware.UserIDKey)
+	if userIDval == nil {
+		writeError(w, http.StatusUnauthorized, "brak autoryzacji")
+		return
+	}
+	var userID int
+	switch v := userIDval.(type) {
+	case float64:
+		userID = int(v)
+	case int:
+		userID = v
+	default:
+		writeError(w, http.StatusBadRequest, "nieprawidlowe id uzytkownika")
+		return
+	}
+
+	err := h.service.ChangeOwnPassword(r.Context(), userID, payload.Stare, payload.Nowe)
+	if err != nil {
+		switch err.Error() {
+		case "invalid old password":
+			writeError(w, http.StatusUnauthorized, "nieprawidlowe stare haslo")
+			return
+		case "password must be at least 6 characters long":
+			writeError(w, http.StatusBadRequest, "hasło musi mieć co najmniej 6 znaków")
+			return
+		default:
+			if errors.Is(err, sql.ErrNoRows) {
+				writeError(w, http.StatusNotFound, "uzytkownik nie istnieje")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "nie udało się zmienić hasła")
+			return
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "hasło zmienione"})
+}
+
 func (h *UzytkownicyHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	uzytkownicy, err := h.service.GetAll(r.Context())
 	if err != nil {
@@ -170,4 +225,17 @@ func (h *UzytkownicyHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "uzytkownik usuniety"})
+}
+
+func (h *UzytkownicyHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidlowe dane")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Jeśli konto z podanym adresem istnieje, otrzymasz instrukcję na e-mail.",
+	})
 }

@@ -36,3 +36,36 @@ export const readJsonOrText = async (response) => {
         return text;
     }
 };
+
+export async function changeMyPassword(oldPassword, newPassword, confirm) {
+    if (newPassword !== confirm) throw new Error('Hasła nie zgadzają się');
+    if ((newPassword || '').length < 6) throw new Error('Hasło musi mieć co najmniej 6 znaków');
+    const res = await apiFetch('/uzytkownicy/haslo', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            stare_haslo: oldPassword,
+            nowe_haslo: newPassword,
+            potwierdzenie: confirm,
+        }),
+    });
+    const body = await readJsonOrText(res);
+    if (!res.ok) {
+        throw new Error(typeof body === 'string' ? body : body?.error || `Status ${res.status}`);
+    }
+    return body;
+}
+
+export async function requestPasswordReset(email) {
+    if (!email || !email.includes('@')) throw new Error('Podaj poprawny adres e-mail');
+    const res = await apiFetch('/uzytkownicy/reset-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const body = await readJsonOrText(res);
+    if (!res.ok) {
+        throw new Error(typeof body === 'string' ? body : body?.error || `Status ${res.status}`);
+    }
+    return body;
+}
