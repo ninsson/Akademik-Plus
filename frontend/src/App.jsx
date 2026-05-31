@@ -6,6 +6,8 @@ import AuthCode from './components/AuthCode';
 import Dashboard from "./components/Dashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import PaymentHistory from "./components/PaymentHistory";
+import AdminFaultsPage from './components/AdminFaultsPage';
+
 import './App.css';
 
 const PageWrapper = ({ children }) => (
@@ -30,6 +32,8 @@ function AnimatedApp() {
                 <Route path="/auth" element={<PageWrapper><AuthCode /></PageWrapper>} />
                 <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
                 <Route path="/admin" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+
+                <Route path="/admin/usterki" element={<PageWrapper><AdminFaultsPage /></PageWrapper>} />
                 <Route path="/history" element={<PageWrapper><PaymentHistory /></PageWrapper>} />
             </Routes>
         </AnimatePresence>
