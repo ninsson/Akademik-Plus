@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -57,6 +58,8 @@ const formatDate = (value) => {
 const statusOptions = ['Przyjeto', 'Weryfikacja', 'W_trakcie_naprawy', 'Naprawiono', 'Zakonczono_bez_naprawy'];
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
+
     const [adminName, setAdminName] = useState('Administratorze');
     const [stats, setStats] = useState(normalizeStats());
     const [faults, setFaults] = useState([]);
@@ -133,7 +136,6 @@ const AdminDashboard = () => {
                         const start = item.poczatek_zakwaterowania ? new Date(item.poczatek_zakwaterowania) : null;
                         const end = item.koniec_zakwaterowania ? new Date(item.koniec_zakwaterowania) : null;
                         if (!end) return false;
-                        // jeśli mamy start, sprawdzamy czy start <= now <= end, jeśli nie mamy start - sprawdzamy tylko end >= now
                         if (start) return start <= now && now <= end;
                         return now <= end;
                     } catch {
@@ -246,7 +248,6 @@ const AdminDashboard = () => {
     };
 
     const loadMainData = async () => {
-        // pobieramy statystyki, usterki, pokoje i zakwaterowania równolegle
         const [statsRes, faultsRes, roomsRes, accommodationsRes] = await Promise.all([
             apiFetch('/statystyki'),
             apiFetch('/usterki'),
@@ -261,7 +262,6 @@ const AdminDashboard = () => {
         const statsData = await readJsonOrText(statsRes);
         setStats(normalizeStats(statsData));
 
-        // ustaw rooms jeśli udało się pobrać
         let roomsList = [];
         if (roomsRes && roomsRes.ok) {
             try {
@@ -276,7 +276,6 @@ const AdminDashboard = () => {
             setRooms((prev) => prev || []);
         }
 
-        // ustaw accommodations jeśli udało się pobrać
         let accommodationsList = [];
         if (accommodationsRes && accommodationsRes.ok) {
             try {
@@ -562,7 +561,7 @@ const AdminDashboard = () => {
             return;
         }
         await Promise.all([loadAccommodations(), loadRooms()]);
-        await refreshStats(); // odświeżamy zajętość itp.
+        await refreshStats();
         setAccommodationForm({ mieszkaniec_id: '', pokoj_id: '', poczatek_zakwaterowania: '', koniec_zakwaterowania: '' });
         setResidentSearch('');
         setSuccessMessage('Zakwaterowanie zostało przypisane.');
@@ -636,7 +635,7 @@ const AdminDashboard = () => {
         pdf.text(`Otwarte usterki: ${stats.otwarte_usterki}`, 20, 86);
         pdf.save(`Raport_${startDate}_${endDate}.pdf`);
     };
-    
+
     const CapacityTooltip = ({ active, payload, label }) => {
         if (!active || !payload || !payload.length) return null;
         const data = payload[0].payload;
@@ -696,7 +695,16 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="admin-card faults-card">
-                    <h3 className="card-title">Lista usterek</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <h3 className="card-title" style={{ margin: 0 }}>Lista usterek</h3>
+                        <button
+                            className="primary-btn"
+                            style={{ padding: '6px 12px', width: 'auto', fontSize: '12px' }}
+                            onClick={() => navigate('/admin/usterki')}
+                        >
+                            Zobacz więcej
+                        </button>
+                    </div>
                     <input className="list-search" placeholder="Szukaj usterek (pokój, opis, status)" value={faultFilter} onChange={(e) => setFaultFilter(e.target.value)} />
                     <div className="faults-list">
                         {filteredFaults.length ? filteredFaults.map((fault) => (
