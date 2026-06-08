@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jsPDF } from 'jspdf';
+import { jsPDF as JsPDF } from 'jspdf';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell,
@@ -117,6 +117,8 @@ const AdminDashboard = () => {
         termin_do_zaplacenia: '',
         data_wystawienia: '',
     });
+    const [generateBillsModalOpen, setGenerateBillsModalOpen] = useState(false);
+    const [generateBillsForm, setGenerateBillsForm] = useState({ year: new Date().getFullYear().toString(), month: String(new Date().getMonth() + 1).padStart(2, '0') });
 
     const totalDebt = stats.nieoplacone_rachunki;
 
@@ -615,7 +617,7 @@ const AdminDashboard = () => {
             return;
         }
 
-        const pdf = new jsPDF();
+        const pdf = new JsPDF();
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(20);
         pdf.text('RAPORT ADMINISTRACYJNY', 20, 20);
@@ -634,6 +636,34 @@ const AdminDashboard = () => {
         pdf.text(`Nieoplacone rachunki: ${stats.nieoplacone_rachunki}`, 20, 79);
         pdf.text(`Otwarte usterki: ${stats.otwarte_usterki}`, 20, 86);
         pdf.save(`Raport_${startDate}_${endDate}.pdf`);
+    };
+
+    const handleGenerateMonthlyBills = async () => {
+        const year = Number(generateBillsForm.year);
+        const month = Number(generateBillsForm.month);
+        if (!year || !month || month < 1 || month > 12) {
+            alert('Wybierz poprawny rok i miesiąc');
+            return;
+        }
+
+        try {
+            const res = await apiFetch('/rachunki/generuj-miesieczne', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ year, month }),
+            });
+            const body = await readJsonOrText(res);
+            if (!res.ok) {
+                alert(typeof body === 'string' ? body : body?.error || 'Nie udało się wygenerować rachunków.');
+                return;
+            }
+            setSuccessMessage(`Wygenerowano rachunki: ${body?.created ?? 0}`);
+            setGenerateBillsModalOpen(false);
+            await refreshStats();
+        } catch (err) {
+            console.error(err);
+            alert('Błąd sieciowy');
+        }
     };
 
     const CapacityTooltip = ({ active, payload, label }) => {
@@ -746,6 +776,9 @@ const AdminDashboard = () => {
                         <button className="primary-btn" onClick={() => openQuickActionModal('rooms')}>Zarządzaj pokojami</button>
                         <button className="primary-btn mt-2" onClick={async () => { await loadAccommodations(); await loadUsers(); setActiveBillModal(true); }}>
                             Dodaj rachunek
+                        </button>
+                        <button className="primary-btn mt-2" onClick={() => setGenerateBillsModalOpen(true)}>
+                            Generuj rachunki miesięczne
                         </button>
                     </div>
                 </div>
@@ -1171,6 +1204,39 @@ const AdminDashboard = () => {
                             >
                                 Dodaj rachunek
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {generateBillsModalOpen && (
+                <div className="admin-modal-overlay" onClick={() => setGenerateBillsModalOpen(false)}>
+                    <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Generowanie rachunków miesięcznych</h2>
+                        <div className="bill-form-grid">
+                            <div className="form-group">
+                                <label>Rok</label>
+                                <input
+                                    type="number"
+                                    min="2020"
+                                    value={generateBillsForm.year}
+                                    onChange={(e) => setGenerateBillsForm(prev => ({ ...prev, year: e.target.value }))}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Miesiąc</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    value={generateBillsForm.month}
+                                    onChange={(e) => setGenerateBillsForm(prev => ({ ...prev, month: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-buttons">
+                            <button type="button" className="cancel-btn" onClick={() => setGenerateBillsModalOpen(false)}>Anuluj</button>
+                            <button type="button" className="confirm-btn" onClick={handleGenerateMonthlyBills}>Uruchom generowanie</button>
                         </div>
                     </div>
                 </div>

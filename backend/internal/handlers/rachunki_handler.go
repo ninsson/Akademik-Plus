@@ -169,3 +169,54 @@ func (h *RachunkiHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusCreated, map[string]string{"numer_rachunku": numer})
 }
+
+func (h *RachunkiHandler) GenerateMonthly(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Year               int    `json:"year"`
+		Month              int    `json:"month"`
+		DataWystawienia    string `json:"data_wystawienia,omitempty"`
+		TerminDoZaplacenia string `json:"termin_do_zaplacenia,omitempty"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "nieprawidłowy format JSON")
+		return
+	}
+	if payload.Year == 0 || payload.Month == 0 {
+		writeError(w, http.StatusBadRequest, "brakuje wymaganych pól year i month")
+		return
+	}
+
+	var dataW time.Time
+	var termin time.Time
+	var err error
+	if payload.DataWystawienia != "" {
+		dataW, err = time.Parse("2006-01-02", payload.DataWystawienia)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "nieprawidłowa data_wystawienia")
+			return
+		}
+	}
+	if payload.TerminDoZaplacenia != "" {
+		termin, err = time.Parse("2006-01-02", payload.TerminDoZaplacenia)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "nieprawidłowa termin_do_zaplacenia")
+			return
+		}
+	}
+
+	created, err := h.svc.GenerateMonthly(r.Context(), payload.Year, payload.Month, dataW, termin)
+	if err != nil {
+		if errors.Is(err, services.ErrMonthAlreadyGenerated) {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "nie udało się wygenerować rachunków")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"message": "rachunki wygenerowane",
+		"created": created,
+	})
+}

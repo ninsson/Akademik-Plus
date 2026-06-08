@@ -106,7 +106,8 @@ func main() {
 	))
 
 	rachunkiRepo := repository.NewRachunkiRepo(db)
-	rachunkiService := services.NewRachunkiService(rachunkiRepo)
+	zakwaterowaniaRepoForBills := repository.NewZakwaterowaniaRepo(db)
+	rachunkiService := services.NewRachunkiServiceWithZakwaterowania(rachunkiRepo, zakwaterowaniaRepoForBills)
 	rachunkiHandler := handlers.NewRachunkiHandler(rachunkiService)
 
 	mux.Handle("GET /rachunki/moje", middleware.JWTMiddleware(
@@ -117,6 +118,9 @@ func main() {
 	))
 	mux.Handle("POST /rachunki", middleware.JWTMiddleware(
 		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.Create)),
+	))
+	mux.Handle("POST /rachunki/generuj-miesieczne", middleware.JWTMiddleware(
+		middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GenerateMonthly)),
 	))
 	mux.Handle("GET /rachunki/uzytkownik/{id}", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.GetByUzytkownikID))))
 	mux.Handle("PATCH /rachunki/{numer}/oplacone", middleware.JWTMiddleware(middleware.RequireRole(models.Administrator)(http.HandlerFunc(rachunkiHandler.MarkAsPaid))))
