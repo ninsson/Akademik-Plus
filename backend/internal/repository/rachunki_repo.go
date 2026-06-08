@@ -48,6 +48,15 @@ func (r *RachunkiRepo) SetPaidStatus(ctx context.Context, numerRachunku string, 
 	return res.RowsAffected()
 }
 
+func (r *RachunkiRepo) GetByZakwaterowanieAndOkres(ctx context.Context, zakwaterowanieID int, okres string) (*models.Rachunek, error) {
+	var rachunek models.Rachunek
+	query := `SELECT * FROM rachunki WHERE zakwaterowanie_id = $1 AND okres_rozliczeniowy = $2 LIMIT 1`
+	if err := r.db.GetContext(ctx, &rachunek, query, zakwaterowanieID, okres); err != nil {
+		return nil, err
+	}
+	return &rachunek, nil
+}
+
 func (r *RachunkiRepo) Create(ctx context.Context, zakwaterowanieID int, kwota decimal.Decimal, dataWystawienia time.Time, termin time.Time, numer string, okres string) (string, error) {
 	query := `
         INSERT INTO rachunki (
@@ -66,4 +75,13 @@ func (r *RachunkiRepo) Create(ctx context.Context, zakwaterowanieID int, kwota d
 		return "", err
 	}
 	return numer, nil
+}
+
+func (r *RachunkiRepo) GetRateByStandard(ctx context.Context, standard string) (decimal.Decimal, error) {
+	var kwota decimal.Decimal
+	query := `SELECT kwota FROM cennik WHERE standard = $1 LIMIT 1`
+	if err := r.db.GetContext(ctx, &kwota, query, standard); err != nil {
+		return decimal.Zero, err
+	}
+	return kwota, nil
 }

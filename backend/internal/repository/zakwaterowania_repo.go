@@ -93,3 +93,30 @@ func (r *ZakwaterowaniaRepo) Checkout(ctx context.Context, id int, koniec string
 	}
 	return res.RowsAffected()
 }
+
+func (r *ZakwaterowaniaRepo) GetActiveForMonth(ctx context.Context, year int, month int) ([]models.Zakwaterowanie, error) {
+	zakwaterowania := []models.Zakwaterowanie{}
+	query := `
+		SELECT 
+			z.id, 
+			z.mieszkaniec_id, 
+			z.pokoj_id, 
+			z.poczatek_zakwaterowania, 
+			z.koniec_zakwaterowania,
+			p.numer_pokoju,
+			p.standard AS standard_pokoju,
+			a.adres AS akademik_adres,
+			CONCAT(u.imie, ' ', u.nazwisko) AS mieszkaniec_nazwa
+		FROM zakwaterowania z
+		JOIN pokoj p ON z.pokoj_id = p.id
+		JOIN akademiki a ON p.akademik_id = a.id
+		JOIN uzytkownicy u ON z.mieszkaniec_id = u.id
+		WHERE z.poczatek_zakwaterowania <= make_date($1, $2, 1)
+		  AND (z.koniec_zakwaterowania IS NULL OR z.koniec_zakwaterowania >= (make_date($1, $2, 1) + INTERVAL '1 month' - INTERVAL '1 day')::date)
+		ORDER BY z.poczatek_zakwaterowania DESC
+	`
+	if err := r.db.SelectContext(ctx, &zakwaterowania, query, year, month); err != nil {
+		return nil, err
+	}
+	return zakwaterowania, nil
+}
